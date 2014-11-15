@@ -1,0 +1,19 @@
+﻿Build started 2014/11/10 17:22:18.
+     1>Project "C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\CS580_Final_Project\CS580_Final_Project.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Debug\CS580_Final_Project.unsuccessfulbuild".
+       AddCudaCompileDeps:
+       Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
+       CudaBuild:
+         Skipping CUDA source file kernel.cu (excluded from build).
+       ManifestResourceCompile:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\CS580_Final_Project.exe.embed.manifest.res" Debug\CS580_Final_Project_manifest.rc 
+       Link:
+         D:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\Debug\CS580_Final_Project.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32" cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\CS580_Final_Project.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\Debug\CS580_Final_Project.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\Debug\CS580_Final_Project.lib" /MACHINE:X86 Debug\CS580_Final_Project.exe.embed.manifest.res
+     1>LINK : error LNK2001: unresolved external symbol _mainCRTStartup
+     1>C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\Debug\CS580_Final_Project.exe : fatal error LNK1120: 1 unresolved externals
+     1>Done Building Project "C:\Users\咱咱\Desktop\Sample\CS580_Final_Project\CS580_Final_Project\CS580_Final_Project.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:03.04
