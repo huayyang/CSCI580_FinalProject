@@ -21,7 +21,8 @@ __device__ float dotProduct(float3 a, float3 b)
 __device__ float3 normalize(float3 vector)
 {
 	float3 result;
-	float value = sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+	float value = (vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
+	value = sqrtf(value);
 	if (value < 0.001 && value > -0.001)
 	{
 		result.x = 0;
@@ -125,10 +126,10 @@ __device__ float checkDis(float4* vertex,float3 pos, float3 dir)
 		return MAX_DIS;
 }
 
-__global__ void kernel(uchar4 * pixels,int count,float4* vertex,float4* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam)
+__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float4* vertex,float4* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam)
 {
-    int i = blockIdx.x;
-	int j = blockIdx.y;
+    int i = blockIdx.x + indexX * unitX;
+	int j = blockIdx.y + indexY * unitY;
 	int offsetX = i - width / 2;
 	int offsetY = height / 2 - j;
 	float3 dir;
@@ -173,10 +174,39 @@ void rayTracingCuda(uchar4 * pixels,int count,float4* vertex,float4* normal,ucha
 	cam.right = CAM_LOOKRIGHT;
 	cam.fov = CAM_FOV;
 	cam.tan_fov_2 = tan(cam.fov * PI /2 / 180);
+	
+	int width = SCR_WIDTH;
+	int indexX = 0;
+	while( width != 0)
+	{
+		int x;
+		int height = SCR_HEIGHT;
+		int indexY = 0;
 
-	dim3 dimblock(SCR_WIDTH,SCR_HEIGHT);
-    // Launch a kernel on the GPU with one thread for each element.
-    kernel<<<dimblock,1>>>(pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam);
+		if (width > UNIT_X)
+			x = UNIT_X;
+		else
+			x = width;
 
-    cudaThreadSynchronize();  
+		while(height != 0)
+		{
+			int y;
+			if (height > UNIT_Y)
+				y = UNIT_Y;
+			else
+				y = height;
+
+			dim3 dimblock(x,y);
+			// Launch a kernel on the GPU with one thread for each element.
+			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam);
+
+			cudaThreadSynchronize();  
+
+			height -= y;
+			indexY++;
+		}
+		width -= x;
+		indexX++;
+	}
+
 }
