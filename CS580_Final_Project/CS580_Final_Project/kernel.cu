@@ -39,7 +39,7 @@ __device__ float3 normalize(float3 vector)
 	return result;
 }
 
-__device__ bool isInside(float3 point, float4* triangle)
+__device__ bool isInside(float3 point, float3* triangle)
 {
 	float3 pointTo0,pointTo1,pointTo2;
 	float3 edge0to1,edge1to2,edge2to0;
@@ -83,7 +83,7 @@ __device__ bool isInside(float3 point, float4* triangle)
 		return false;
 }
 
-__device__ float checkDis(float4* vertex,float3 pos, float3 dir)
+__device__ float checkDis(float3* vertex,float3 pos, float3 dir)
 {
 	//step1 calculate normal
 	float3 edge1,edge2,normal;
@@ -126,7 +126,7 @@ __device__ float checkDis(float4* vertex,float3 pos, float3 dir)
 		return MAX_DIS;
 }
 
-__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float4* vertex,float4* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam)
+__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam)
 {
     int i = blockIdx.x + indexX * unitX;
 	int j = blockIdx.y + indexY * unitY;
@@ -165,7 +165,7 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-void rayTracingCuda(uchar4 * pixels,int count,float4* vertex,float4* normal,uchar4* color)
+void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color)
 {
 	Camera cam;
 	cam.pos = CAM_POS;

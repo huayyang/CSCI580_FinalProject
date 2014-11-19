@@ -15,7 +15,7 @@
 
 GLuint screenBufferPBO;
 GLuint screenTexture2D;
-float4 *vertexBuffer,*normalBuffer;
+float3 *vertexBuffer,*normalBuffer;
 uchar4 *colorBuffer;
 int totalNum;
 struct cudaGraphicsResource* screenBufferPBO_CUDA;

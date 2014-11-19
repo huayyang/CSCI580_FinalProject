@@ -2,55 +2,57 @@
 
 #include "rayTracingProcessor.cuh"
 #include "global.h"
+#include "KDTree.h"
 
+using namespace KDTree;
 void readFile()  // currently is premade
 {
 	totalNum = 4;
 	size_t size = totalNum * 3;
-	vertexBuffer = (float4*)malloc(size * sizeof(float4));
-	memset(vertexBuffer, 0, size * sizeof(float4));
-	cudaMalloc((void**)&vertexBuffer_CUDA,size * sizeof(float4));
+	vertexBuffer = (float3*)malloc(size * sizeof(float3));
+	memset(vertexBuffer, 0, size * sizeof(float3));
+	cudaMalloc((void**)&vertexBuffer_CUDA,size * sizeof(float3));
 
-	normalBuffer = (float4*)malloc(size * sizeof(float4));
-	memset(normalBuffer, 0, size * sizeof(float4));
-	cudaMalloc((void**)&normalBuffer_CUDA,size * sizeof(float4));
+	normalBuffer = (float3*)malloc(size * sizeof(float3));
+	memset(normalBuffer, 0, size * sizeof(float3));
+	cudaMalloc((void**)&normalBuffer_CUDA,size * sizeof(float3));
 	
 	colorBuffer = (uchar4*)malloc(size * sizeof(uchar4));
 	memset(colorBuffer, 0, size * sizeof(uchar4));
 	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
 
 	//temp
-	vertexBuffer[0] = make_float4(0,0,0,0);
-	vertexBuffer[1] = make_float4(100,0,100,0);
-	vertexBuffer[2] = make_float4(100,0,0,0);
+	vertexBuffer[0] = make_float3(0,0,0);
+	vertexBuffer[1] = make_float3(100,0,100);
+	vertexBuffer[2] = make_float3(100,0,0);
 	
-	vertexBuffer[3] = make_float4(0,0,0,0);
-	vertexBuffer[4] = make_float4(0,0,100,0);
-	vertexBuffer[5] = make_float4(100,0,100,0);
+	vertexBuffer[3] = make_float3(0,0,0);
+	vertexBuffer[4] = make_float3(0,0,100);
+	vertexBuffer[5] = make_float3(100,0,100);
 	
-	vertexBuffer[6] = make_float4(0,0,0,0);
-	vertexBuffer[7] = make_float4(0,100,100,0);
-	vertexBuffer[8] = make_float4(0,100,0,0);
+	vertexBuffer[6] = make_float3(0,0,0);
+	vertexBuffer[7] = make_float3(0,100,100);
+	vertexBuffer[8] = make_float3(0,100,0);
 	
-	vertexBuffer[9] = make_float4(0,0,0,0);
-	vertexBuffer[10] = make_float4(0,0,100,0);
-	vertexBuffer[11] = make_float4(0,100,100,0);
+	vertexBuffer[9] = make_float3(0,0,0);
+	vertexBuffer[10] = make_float3(0,0,100);
+	vertexBuffer[11] = make_float3(0,100,100);
 	
-	normalBuffer[0] = make_float4(0,1,0,0);
-	normalBuffer[1] = make_float4(0,1,0,0);
-	normalBuffer[2] = make_float4(0,1,0,0);
+	normalBuffer[0] = make_float3(0,1,0);
+	normalBuffer[1] = make_float3(0,1,0);
+	normalBuffer[2] = make_float3(0,1,0);
 	
-	normalBuffer[3] = make_float4(0,1,0,0);
-	normalBuffer[4] = make_float4(0,1,0,0);
-	normalBuffer[5] = make_float4(0,1,0,0);
+	normalBuffer[3] = make_float3(0,1,0);
+	normalBuffer[4] = make_float3(0,1,0);
+	normalBuffer[5] = make_float3(0,1,0);
 	
-	normalBuffer[6] = make_float4(1,0,0,0);
-	normalBuffer[7] = make_float4(1,0,0,0);
-	normalBuffer[8] = make_float4(1,0,0,0);
+	normalBuffer[6] = make_float3(1,0,0);
+	normalBuffer[7] = make_float3(1,0,0);
+	normalBuffer[8] = make_float3(1,0,0);
 	
-	normalBuffer[9] = make_float4(1,0,0,0);
-	normalBuffer[10] = make_float4(1,0,0,0);
-	normalBuffer[11] = make_float4(1,0,0,0);
+	normalBuffer[9] = make_float3(1,0,0);
+	normalBuffer[10] = make_float3(1,0,0);
+	normalBuffer[11] = make_float3(1,0,0);
 	
 	unsigned char r = (255) & 0xff;  
 	unsigned char g = (255) & 0xff;  
@@ -73,9 +75,12 @@ void readFile()  // currently is premade
 	colorBuffer[11] = make_uchar4(0,g,0,a);
 	//
 	
-	cudaMemcpy(vertexBuffer_CUDA,vertexBuffer,size * sizeof(float4),cudaMemcpyHostToDevice);
-	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float4),cudaMemcpyHostToDevice);
+	cudaMemcpy(vertexBuffer_CUDA,vertexBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
+	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
+
+	//KDNode* KDTreeRoot = new KDNode();
+	//KDTreeRoot->build();
 }
 
 void init()  
