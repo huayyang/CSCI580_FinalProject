@@ -210,3 +210,89 @@ void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,ucha
 	}
 
 }
+
+
+__global__ void kernel2(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,uchar4* dirs,unsigned int width,unsigned int height,Camera cam)
+{
+    int i = blockIdx.x + indexX * unitX;
+	int j = blockIdx.y + indexY * unitY;
+	int offsetX = i - width / 2;
+	int offsetY = height / 2 - j;
+	float3 dir;
+	dir.x = cam.lookat.x + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.x + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.x;
+	dir.y = cam.lookat.y + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.y + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.y;
+	dir.z = cam.lookat.z + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.z + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.z;
+	
+	dir = normalize(dir);
+
+	float minDis = MAX_DIS;
+	int index = -1;
+	for(int k =0;k<count;k++)
+	{
+		float distance = checkDis(vertex + k * 3,cam.pos,dir);
+		if (distance < minDis)
+		{
+			minDis = distance;
+			index = k;
+		}
+	}
+	if (index != -1)
+	{
+		pixels[i + j * width].x = color[index * 3].x;
+		pixels[i + j * width].y = color[index * 3].y;
+		pixels[i + j * width].z = color[index * 3].z;
+	}
+	else
+	{
+		pixels[i + j * width].x = 0;
+		pixels[i + j * width].y = 0;
+		pixels[i + j * width].z = 0;
+	}
+}
+
+// Helper function for using CUDA to add vectors in parallel.
+void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color, float3* dirs)
+{
+	Camera cam;
+	cam.pos = CAM_POS;
+	cam.lookat = CAM_LOOKAT;
+	cam.up = CAM_LOOKUP;
+	cam.right = CAM_LOOKRIGHT;
+	cam.fov = CAM_FOV;
+	cam.tan_fov_2 = tan(cam.fov * PI /2 / 180);
+	
+	int width = SCR_WIDTH;
+	int indexX = 0;
+	while( width != 0)
+	{
+		int x;
+		int height = SCR_HEIGHT;
+		int indexY = 0;
+
+		if (width > UNIT_X)
+			x = UNIT_X;
+		else
+			x = width;
+
+		while(height != 0)
+		{
+			int y;
+			if (height > UNIT_Y)
+				y = UNIT_Y;
+			else
+				y = height;
+
+			dim3 dimblock(x,y);
+			// Launch a kernel on the GPU with one thread for each element.
+			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam);
+
+			cudaThreadSynchronize();  
+
+			height -= y;
+			indexY++;
+		}
+		width -= x;
+		indexX++;
+	}
+
+}
