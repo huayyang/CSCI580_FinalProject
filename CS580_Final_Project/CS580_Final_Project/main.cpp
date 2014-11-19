@@ -5,6 +5,7 @@
 #include <iostream>
 
 using namespace std;
+using namespace KDTree;
 #define PHOTON_NUM 100
 
 void readFile()  // currently is premade
@@ -23,14 +24,14 @@ void readFile()  // currently is premade
 	memset(colorBuffer, 0, size * sizeof(uchar4));
 	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
 
-<<<<<<< HEAD
+
 	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
 	memset(kdTriangles, 0, size * sizeof(KDTriangle));
-=======
+
 	photonDirBuffer = (float3*)malloc(PHOTON_NUM * sizeof(float3));
 	memset(photonDirBuffer, 0, PHOTON_NUM * sizeof(float3));
 	cudaMalloc((void**)&photonDirBuffer_CUDA, PHOTON_NUM * sizeof(float3));
->>>>>>> b5d83a7e61ae665906dd895bf1a0beae3738e62c
+
 
 	//temp
 	vertexBuffer[0] = make_float3(0,0,0);
@@ -95,7 +96,6 @@ void readFile()  // currently is premade
 	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
 
-<<<<<<< HEAD
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -104,9 +104,9 @@ void readFile()  // currently is premade
 	}
 	//KDNode* KDTreeRoot = new KDNode();
 	//KDTreeRoot->build();
-=======
+
 	cudaMemcpy(photonDirBuffer_CUDA,photonDirBuffer, PHOTON_NUM * sizeof(float3),cudaMemcpyHostToDevice);
->>>>>>> b5d83a7e61ae665906dd895bf1a0beae3738e62c
+
 }
 
 void init()  
