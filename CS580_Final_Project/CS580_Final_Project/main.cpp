@@ -2,9 +2,11 @@
 
 #include "rayTracingProcessor.cuh"
 #include "global.h"
-#include "KDTree.h"
+#include <iostream>
 
-using namespace KDTree;
+using namespace std;
+#define PHOTON_NUM 100
+
 void readFile()  // currently is premade
 {
 	totalNum = 4;
@@ -20,6 +22,10 @@ void readFile()  // currently is premade
 	colorBuffer = (uchar4*)malloc(size * sizeof(uchar4));
 	memset(colorBuffer, 0, size * sizeof(uchar4));
 	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
+
+	photonDirBuffer = (float3*)malloc(PHOTON_NUM * sizeof(float3));
+	memset(photonDirBuffer, 0, PHOTON_NUM * sizeof(float3));
+	cudaMalloc((void**)&photonDirBuffer_CUDA, PHOTON_NUM * sizeof(float3));
 
 	//temp
 	vertexBuffer[0] = make_float3(0,0,0);
@@ -74,13 +80,17 @@ void readFile()  // currently is premade
 	colorBuffer[10] = make_uchar4(0,g,0,a);
 	colorBuffer[11] = make_uchar4(0,g,0,a);
 	//
+
+	for(int i = 0;i<PHOTON_NUM;i++)
+	{
+		photonDirBuffer[i] = make_float3(5-i/10,0,5-i%10);
+	}
 	
 	cudaMemcpy(vertexBuffer_CUDA,vertexBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
 
-	//KDNode* KDTreeRoot = new KDNode();
-	//KDTreeRoot->build();
+	cudaMemcpy(photonDirBuffer_CUDA,photonDirBuffer, PHOTON_NUM * sizeof(float3),cudaMemcpyHostToDevice);
 }
 
 void init()  
@@ -89,11 +99,18 @@ void init()
     glShadeModel(GL_SMOOTH);  
 
 	screenBufferPBO = 0;
+	photonBufferPBO = 0;
 	glewInit();
     glGenBuffersARB(1, &screenBufferPBO);//生成一个缓冲区句柄  
     glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, screenBufferPBO);//将句柄绑定到像素缓冲区（即缓冲区存放的数据类型为：PBO）  
     glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, SCR_WIDTH * SCR_HEIGHT * 4 * sizeof(GLubyte), NULL, GL_DYNAMIC_COPY);//申请内存空间并设置相关属性以及初始值 
 	cudaGraphicsGLRegisterBuffer(&screenBufferPBO_CUDA, screenBufferPBO, cudaGraphicsMapFlagsNone);   
+
+	glGenBuffersARB(1, &photonBufferPBO);//生成一个缓冲区句柄  
+	glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, photonBufferPBO);//将句柄绑定到像素缓冲区（即缓冲区存放的数据类型为：PBO）  
+	glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, SCR_WIDTH * SCR_HEIGHT * 4 * sizeof(GLubyte), NULL, GL_DYNAMIC_COPY);//申请内存空间并设置相关属性以及初始值 
+	cudaGraphicsGLRegisterBuffer(&photonBufferPBO_CUDA, photonBufferPBO, cudaGraphicsMapFlagsNone);   
+
 
 	glEnable(GL_TEXTURE_2D);  
     glGenTextures(1, &screenTexture2D);  
@@ -118,12 +135,37 @@ void draw()
 	glTexCoord2f(1.0f,1.0f); glVertex3f(1.0f,0.0f,0.0f);  
 	glEnd(); 
 
+
+	// ==============================
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// 清除屏幕和深度缓存
+	//glLoadIdentity();// 重置当前的模型观察矩阵
+	//glColor3f(1.0,1.0,0.0);
+
+	//glEnable( GL_POINT_SMOOTH );
+	//glEnable( GL_BLEND );
+	//glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	//glClearDepth(1.0f);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthFunc(GL_LEQUAL);
+	//glPointSize(20);
+	//
+	//glBegin(GL_POINTS);
+	//	
+	//	glVertex3f(0,0,0.1);
+	//glEnd();
+	//glFlush(); 
+	// ============================
+
 	glutSwapBuffers();  
 }  
 
 void display()  
 {  
-	uchar4 *pixelPtr = NULL;  
+	if(rendered)
+		return;
+	rendered = true;
+	cout<<"rendering....\n";
+	uchar4 *pixelPtr = NULL;
     size_t num_bytes;  
 
     cudaGraphicsMapResources(1, &screenBufferPBO_CUDA, 0);  
@@ -132,6 +174,8 @@ void display()
 	rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
 
 	uchar4 * tmp = (uchar4*)malloc(sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT);
+	for(int i = 0;i<100;i++)
+		tmp[i].x = 0;
 	cudaMemcpy(tmp,pixelPtr,sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT,cudaMemcpyDeviceToHost);
 
 	cudaGraphicsUnmapResources(1, &screenBufferPBO_CUDA, 0);  
@@ -169,6 +213,7 @@ int main(int argc, char **argv)
     glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);  
     glutDisplayFunc(display);  
     glutReshapeFunc(reshape);  
+	rendered = false;
     glutMainLoop();  
 
     return 0;
