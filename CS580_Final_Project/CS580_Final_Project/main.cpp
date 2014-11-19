@@ -21,6 +21,9 @@ void readFile()  // currently is premade
 	memset(colorBuffer, 0, size * sizeof(uchar4));
 	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
 
+	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
+	memset(kdTriangles, 0, size * sizeof(KDTriangle));
+
 	//temp
 	vertexBuffer[0] = make_float3(0,0,0);
 	vertexBuffer[1] = make_float3(100,0,100);
@@ -79,6 +82,12 @@ void readFile()  // currently is premade
 	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
 
+
+	for (int i = 0; i < size; ++i)
+	{
+		kdTriangles[i].index = i;
+		kdTriangles[i].generate_bounding_box(i);
+	}
 	//KDNode* KDTreeRoot = new KDNode();
 	//KDTreeRoot->build();
 }
