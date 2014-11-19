@@ -10,7 +10,7 @@ using namespace KDTree;
 
 void readFile()  // currently is premade
 {
-	totalNum = 4;
+	totalNum = 10;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -50,10 +50,33 @@ void readFile()  // currently is premade
 	vertexBuffer[10] = make_float3(0,0,100);
 	vertexBuffer[11] = make_float3(0,100,100);
 	
+	vertexBuffer[12] = make_float3(0,0,0);
+	vertexBuffer[13] = make_float3(100,0,0);
+	vertexBuffer[14] = make_float3(100,100,0);
+	
+	vertexBuffer[15] = make_float3(0,0,0);
+	vertexBuffer[16] = make_float3(100,100,0);
+	vertexBuffer[17] = make_float3(0,100,0);
+	
+	vertexBuffer[18] = make_float3(100,0,0);
+	vertexBuffer[19] = make_float3(100,100,100);
+	vertexBuffer[20] = make_float3(100,100,0);
+	
+	vertexBuffer[21] = make_float3(100,0,0);
+	vertexBuffer[22] = make_float3(100,0,100);
+	vertexBuffer[23] = make_float3(100,100,100);
+	
+	vertexBuffer[24] = make_float3(0,0,100);
+	vertexBuffer[25] = make_float3(100,0,100);
+	vertexBuffer[26] = make_float3(100,100,100);
+	
+	vertexBuffer[27] = make_float3(0,0,100);
+	vertexBuffer[28] = make_float3(100,100,100);
+	vertexBuffer[29] = make_float3(0,100,100);
+
 	normalBuffer[0] = make_float3(0,1,0);
 	normalBuffer[1] = make_float3(0,1,0);
 	normalBuffer[2] = make_float3(0,1,0);
-	
 	normalBuffer[3] = make_float3(0,1,0);
 	normalBuffer[4] = make_float3(0,1,0);
 	normalBuffer[5] = make_float3(0,1,0);
@@ -61,30 +84,69 @@ void readFile()  // currently is premade
 	normalBuffer[6] = make_float3(1,0,0);
 	normalBuffer[7] = make_float3(1,0,0);
 	normalBuffer[8] = make_float3(1,0,0);
-	
 	normalBuffer[9] = make_float3(1,0,0);
 	normalBuffer[10] = make_float3(1,0,0);
 	normalBuffer[11] = make_float3(1,0,0);
+	
+	normalBuffer[12] = make_float3(0,0,1);
+	normalBuffer[13] = make_float3(0,0,1);
+	normalBuffer[14] = make_float3(0,0,1);
+	normalBuffer[15] = make_float3(0,0,1);
+	normalBuffer[16] = make_float3(0,0,1);
+	normalBuffer[17] = make_float3(0,0,1);
+	
+	normalBuffer[18] = make_float3(-1,0,0);
+	normalBuffer[19] = make_float3(-1,0,0);
+	normalBuffer[20] = make_float3(-1,0,0);
+	normalBuffer[21] = make_float3(-1,0,0);
+	normalBuffer[22] = make_float3(-1,0,0);
+	normalBuffer[23] = make_float3(-1,0,0);
+	
+	normalBuffer[24] = make_float3(0,0,-1);
+	normalBuffer[25] = make_float3(0,0,-1);
+	normalBuffer[26] = make_float3(0,0,-1);
+	normalBuffer[27] = make_float3(0,0,-1);
+	normalBuffer[28] = make_float3(0,0,-1);
+	normalBuffer[29] = make_float3(0,0,-1);
 	
 	unsigned char r = (255) & 0xff;  
 	unsigned char g = (255) & 0xff;  
 	unsigned char b = (255) & 0xff;  
 	unsigned char a = (255) & 0xff;  
-	colorBuffer[0] = make_uchar4(r,0,0,a);
-	colorBuffer[1] = make_uchar4(r,0,0,a);
-	colorBuffer[2] = make_uchar4(r,0,0,a);
-	
-	colorBuffer[3] = make_uchar4(r,0,0,a);
-	colorBuffer[4] = make_uchar4(r,0,0,a);
-	colorBuffer[5] = make_uchar4(r,0,0,a);
+	colorBuffer[0] = make_uchar4(r,g,b,a);
+	colorBuffer[1] = make_uchar4(r,g,b,a);
+	colorBuffer[2] = make_uchar4(r,g,b,a);
+	colorBuffer[3] = make_uchar4(r,g,b,a);
+	colorBuffer[4] = make_uchar4(r,g,b,a);
+	colorBuffer[5] = make_uchar4(r,g,b,a);
 	
 	colorBuffer[6] = make_uchar4(0,g,0,a);
 	colorBuffer[7] = make_uchar4(0,g,0,a);
 	colorBuffer[8] = make_uchar4(0,g,0,a);
-	
 	colorBuffer[9] = make_uchar4(0,g,0,a);
 	colorBuffer[10] = make_uchar4(0,g,0,a);
 	colorBuffer[11] = make_uchar4(0,g,0,a);
+	
+	colorBuffer[12] = make_uchar4(r,g,0,a);
+	colorBuffer[13] = make_uchar4(r,g,0,a);
+	colorBuffer[14] = make_uchar4(r,g,0,a);
+	colorBuffer[15] = make_uchar4(r,g,0,a);
+	colorBuffer[16] = make_uchar4(r,g,0,a);
+	colorBuffer[17] = make_uchar4(r,g,0,a);
+	
+	colorBuffer[18] = make_uchar4(r,0,b,a);
+	colorBuffer[19] = make_uchar4(r,0,b,a);
+	colorBuffer[20] = make_uchar4(r,0,b,a);
+	colorBuffer[21] = make_uchar4(r,0,b,a);
+	colorBuffer[22] = make_uchar4(r,0,b,a);
+	colorBuffer[23] = make_uchar4(r,0,b,a);
+	
+	colorBuffer[24] = make_uchar4(0,g,b,a);
+	colorBuffer[25] = make_uchar4(0,g,b,a);
+	colorBuffer[26] = make_uchar4(0,g,b,a);
+	colorBuffer[27] = make_uchar4(0,g,b,a);
+	colorBuffer[28] = make_uchar4(0,g,b,a);
+	colorBuffer[29] = make_uchar4(0,g,b,a);
 	//
 
 	for(int i = 0;i<PHOTON_NUM;i++)
