@@ -20,7 +20,7 @@
 
 static GLuint screenBufferPBO;
 static GLuint screenTexture2D;
-static float3 *vertexBuffer,*normalBuffer;
+static float3 *vertexBuffer, *normalBuffer;
 static uchar4 *colorBuffer;
 
 static KDTree::KDTriangle *kdTriangles;
