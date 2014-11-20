@@ -200,6 +200,46 @@ __device__ float hitSurface(float3* vertex,float3 pos, float3 dir, float3* pho)
 }
 
 
+__device__ void swapValue(float &a, float &b){
+	float temp = a;
+	a = b;
+	b = temp;
+}
+
+__device__ void splitSort(float *A, int n, int low, int high)
+{
+	if(low >= high)
+		return;
+	int left = low;
+	int right = high;
+	bool moveRight = true;
+	while(left!=right){
+		if(moveRight){
+			if(A[left] > A[right])
+			{
+				swapValue(A[left],A[right]);
+				moveRight = false;
+			}
+			else
+			{
+				right--;
+			}
+		}
+		else{
+			if(A[left] > A[right])
+			{
+				swapValue(A[left],A[right]);
+				moveRight = true;
+			}
+			else
+			{
+				left++;
+			}
+		}
+	}
+	splitSort(A,n,low,left-1);
+	splitSort(A,n,left+1,high);
+}
 
 __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam,Photon* photons)
 {
@@ -232,26 +272,27 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 	if (index != -1)
 	{
 		bool found = false;
+		int total = 0;
+		int radius = 50;
+		float distances[100] = {0};
 		for(int k = 0;k<100;k++)
 		{
 			float3 temp ;
 			temp.x = hitpoint.x - photons[k].pos.x;
 			temp.y = hitpoint.y - photons[k].pos.y;
 			temp.z = hitpoint.z - photons[k].pos.z;
-			if(sqrt(dotProduct(temp, temp)) < 1)
-			{
-				pixels[i + j * width].x = 120;
-				pixels[i + j * width].y = 0;
-				pixels[i + j * width].z = 120;
-				found = true;
-				break;
-			}
+			float dis = dotProduct(temp, temp);
+			distances[k] = dis;
 		}
+
+		// sort and get the middle distance
+		splitSort(distances,100,0,99);
+
 		if (!found)
 		{
-			pixels[i + j * width].x = color[index * 3].x;
-			pixels[i + j * width].y = color[index * 3].y;
-			pixels[i + j * width].z = color[index * 3].z;
+			pixels[i + j * width].x = color[index * 3].x / distances[radius] * 3000 > 255 ? 255 : color[index * 3].x / distances[radius] * 3000;
+			pixels[i + j * width].y = color[index * 3].y / distances[radius] * 3000 > 255 ? 255 : color[index * 3].y / distances[radius] * 3000;
+			pixels[i + j * width].z = color[index * 3].z / distances[radius] * 3000 > 255 ? 255 : color[index * 3].z / distances[radius] * 3000;
 		}
 	}
 	else
@@ -317,6 +358,10 @@ __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* phot
 	int j = blockIdx.y;
 	float3 dir;
 
+	if(i >= 10 || j >= 10)
+		return;
+
+
 	dir.x = photons[i*10+j].pos.x;
 	dir.y = photons[i*10+j].pos.y;
 	dir.z = -10;
@@ -333,7 +378,9 @@ __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* phot
 		{
 			minDis = distance;
 			index = k;
-			photons[i*10+j].pos = temp;
+			photons[i*10+j].pos.x = temp.x;
+			photons[i*10+j].pos.y = temp.y;
+			photons[i*10+j].pos.z = temp.z;
 		}
 	}
 	if (index != -1)
@@ -360,7 +407,7 @@ void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uch
 	
 	//Photon* photonBuffer = (Photon*)malloc(100 * sizeof(Photon));
 	//cudaMemcpy(photonBuffer,photons,100 * sizeof(Photon),cudaMemcpyDeviceToHost);
-
+	//
 	//for(int i =0;i< 100;i++)
 	//{
 	//	std::cout<<" "<<photonBuffer[i].pos.x<<" "<<photonBuffer[i].pos.y<<" "<<photonBuffer[i].pos.z<<"\t";

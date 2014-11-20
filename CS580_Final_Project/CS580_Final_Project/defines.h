@@ -16,7 +16,7 @@ static float3 CAM_LOOKUP = make_float3(0,0,1);
 static float3 CAM_LOOKRIGHT = make_float3(1,0,0);
 static float CAM_FOV = 100;
 
-static float3 LIGHT_POS = make_float3(50,50,100);
+static float3 LIGHT_POS = make_float3(50,30,100);
 
 typedef struct {
 	float3 pos,lookat,up,right;
