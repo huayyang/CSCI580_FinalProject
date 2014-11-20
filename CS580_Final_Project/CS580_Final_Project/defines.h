@@ -6,8 +6,8 @@
 #define PI 3.14159265358979323846
 #define MAX_DIS 1000000
 
-static int UNIT_X = 256;
-static int UNIT_Y = 256;
+static int UNIT_X = 128;
+static int UNIT_Y = 128;
 static int SCR_WIDTH = 1000;
 static int SCR_HEIGHT = 800;
 static float3 CAM_POS = make_float3(50,100,50);
@@ -24,5 +24,10 @@ typedef struct {
 	float tan_fov_2;
 }Camera;
 
+typedef struct {
+	float3 pos;
+	uchar4 power;
+	char phi, theta;
+}Photon;
 
 #endif

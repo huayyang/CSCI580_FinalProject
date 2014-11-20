@@ -28,9 +28,10 @@ void readFile()  // currently is premade
 	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
 	memset(kdTriangles, 0, size * sizeof(KDTriangle));
 
-	photonDirBuffer = (float3*)malloc(PHOTON_NUM * sizeof(float3));
-	memset(photonDirBuffer, 0, PHOTON_NUM * sizeof(float3));
-	cudaMalloc((void**)&photonDirBuffer_CUDA, PHOTON_NUM * sizeof(float3));
+	photonBuffer = (Photon*)malloc(PHOTON_NUM * sizeof(Photon));
+	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
+	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
+
 
 
 	//temp
@@ -151,13 +152,15 @@ void readFile()  // currently is premade
 
 	for(int i = 0;i<PHOTON_NUM;i++)
 	{
-		photonDirBuffer[i] = make_float3(5-i/10,0,5-i%10);
+		photonBuffer[i].pos = make_float3(5-i/10,0,5-i%10);
+		photonBuffer[i].power = make_uchar4(255,255,255,255);
 	}
 	
 	cudaMemcpy(vertexBuffer_CUDA,vertexBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
 
+	cudaMemcpy(photonBuffer_CUDA,photonBuffer, PHOTON_NUM * sizeof(Photon),cudaMemcpyHostToDevice);
 
 	for (int i = 0; i < size; ++i)
 	{
@@ -166,8 +169,6 @@ void readFile()  // currently is premade
 	}
 	//KDNode* KDTreeRoot = new KDNode();
 	//KDTreeRoot->build();
-
-	cudaMemcpy(photonDirBuffer_CUDA,photonDirBuffer, PHOTON_NUM * sizeof(float3),cudaMemcpyHostToDevice);
 
 }
 
@@ -249,7 +250,8 @@ void display()
     cudaGraphicsMapResources(1, &screenBufferPBO_CUDA, 0);  
     cudaGraphicsResourceGetMappedPointer((void**)&pixelPtr, &num_bytes, screenBufferPBO_CUDA);  
 
-	rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
+	//rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
+	rayTracingCuda2(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA, photonBuffer_CUDA);
 
 	uchar4 * tmp = (uchar4*)malloc(sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT);
 	for(int i = 0;i<100;i++)

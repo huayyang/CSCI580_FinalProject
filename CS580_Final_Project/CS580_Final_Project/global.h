@@ -26,7 +26,7 @@ static uchar4 *colorBuffer;
 static KDTree::KDTriangle *kdTriangles;
 
 static GLuint photonBufferPBO;
-static float3 *photonDirBuffer;
+static Photon *photonBuffer;
 
 static int totalNum;
 static bool rendered;
