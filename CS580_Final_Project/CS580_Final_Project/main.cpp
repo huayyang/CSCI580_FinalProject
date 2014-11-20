@@ -152,7 +152,7 @@ void readFile()  // currently is premade
 
 	for(int i = 0;i<PHOTON_NUM;i++)
 	{
-		photonBuffer[i].pos = make_float3(5-i/10,0,5-i%10);
+		photonBuffer[i].pos = make_float3(5-i/10,5-i%10,0);
 		photonBuffer[i].power = make_uchar4(255,255,255,255);
 	}
 	

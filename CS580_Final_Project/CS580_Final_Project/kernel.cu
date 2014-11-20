@@ -4,6 +4,7 @@
 #include "math_functions.h"
 #include <cuda.h>
 #include <curand.h>
+#include <iostream>
 
 __device__ unsigned int x = 123456789,
 	y = 362436000,
@@ -230,21 +231,28 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 	}
 	if (index != -1)
 	{
-		//for(int i = 0;i<10;i++)
-		//{
-		//	float3 temp ;
-		//	temp.x = hitpoint.x - photons[i].pos.x;
-		//	temp.y = hitpoint.y - photons[i].pos.y;
-		//	temp.z = hitpoint.z - photons[i].pos.z;
-		//	if(dotProduct(temp, temp) < 0.1)
-		//	{
-		//		color[index * 3].x = color[index * 3].y = color[index * 3].z = 120;
-		//		break;
-		//	}
-		//}
-		pixels[i + j * width].x = color[index * 3].x;
-		pixels[i + j * width].y = color[index * 3].y;
-		pixels[i + j * width].z = color[index * 3].z;
+		bool found = false;
+		for(int k = 0;k<100;k++)
+		{
+			float3 temp ;
+			temp.x = hitpoint.x - photons[k].pos.x;
+			temp.y = hitpoint.y - photons[k].pos.y;
+			temp.z = hitpoint.z - photons[k].pos.z;
+			if(sqrt(dotProduct(temp, temp)) < 1)
+			{
+				pixels[i + j * width].x = 120;
+				pixels[i + j * width].y = 0;
+				pixels[i + j * width].z = 120;
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			pixels[i + j * width].x = color[index * 3].x;
+			pixels[i + j * width].y = color[index * 3].y;
+			pixels[i + j * width].z = color[index * 3].z;
+		}
 	}
 	else
 	{
@@ -303,18 +311,16 @@ void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,ucha
 
 
 
-__global__ void kernel2(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam, Photon* photons, float3 lightPos)
+__global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* photons, float3 lightPos)
 {
-    int i = blockIdx.x + indexX * unitX;
-	int j = blockIdx.y + indexY * unitY;
-	int offsetX = i - width / 2;
-	int offsetY = height / 2 - j;
+    int i = blockIdx.x;
+	int j = blockIdx.y;
 	float3 dir;
-	if(i*10+j >= 100)
-		return;
-	dir.x = photons[i*10+j].pos.x - lightPos.x;
-	dir.y = photons[i*10+j].pos.y - lightPos.y;
-	dir.z = photons[i*10+j].pos.z - lightPos.z;
+
+	dir.x = photons[i*10+j].pos.x;
+	dir.y = photons[i*10+j].pos.y;
+	dir.z = -10;
+	photons[i*10+j].pos.x =photons[i*10+j].pos.y =photons[i*10+j].pos.z =-100;
 	dir = normalize(dir);
 
 	float minDis = MAX_DIS;
@@ -347,6 +353,19 @@ __global__ void kernel2(int indexX,int indexY,int unitX,int unitY,uchar4 * pixel
 // Helper function for using CUDA to add vectors in parallel.
 void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color, Photon* photons)
 {
+	dim3 photonBlock(10,10);
+	// compute light photons
+	CastPhoton<<<photonBlock,1>>>(pixels,count,vertex,photons,LIGHT_POS);
+	cudaThreadSynchronize();  
+	
+	//Photon* photonBuffer = (Photon*)malloc(100 * sizeof(Photon));
+	//cudaMemcpy(photonBuffer,photons,100 * sizeof(Photon),cudaMemcpyDeviceToHost);
+
+	//for(int i =0;i< 100;i++)
+	//{
+	//	std::cout<<" "<<photonBuffer[i].pos.x<<" "<<photonBuffer[i].pos.y<<" "<<photonBuffer[i].pos.z<<"\t";
+	//}
+
 	Camera cam;
 	cam.pos = CAM_POS;
 	cam.lookat = CAM_LOOKAT;
@@ -378,8 +397,6 @@ void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uch
 
 			dim3 dimblock(x,y);
 
-			// compute light photons
-			kernel2<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam,photons,LIGHT_POS);
 			// Launch a kernel on the GPU with one thread for each element.
 			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam,photons);
 
