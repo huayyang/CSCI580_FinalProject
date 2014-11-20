@@ -99,8 +99,12 @@ void readFile()  // currently is premade
 
 	for (int i = 0; i < size; ++i)
 	{
-		kdTriangles[i].index = i;
-		kdTriangles[i].generate_bounding_box(i);
+		for (int j = 0; j < 3; ++j)
+		{
+			kdTriangles[i].index[j] = i;
+			//kdTriangles[i].generate_bounding_box(i);
+		}
+		
 	}
 	//KDNode* KDTreeRoot = new KDNode();
 	//KDTreeRoot->build();

@@ -25,7 +25,7 @@ namespace KDTree
 	{
 	public:
 		void generate_bounding_box(int index);
-		int index;
+		int index[3];
 		BoundingBox bbox;
 		float3 get_midpoint();
 	};

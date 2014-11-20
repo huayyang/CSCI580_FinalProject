@@ -16,8 +16,6 @@
 
 #pragma comment(lib, "glew32.lib")
 
-
-
 static GLuint screenBufferPBO;
 static GLuint screenTexture2D;
 static float3 *vertexBuffer, *normalBuffer;

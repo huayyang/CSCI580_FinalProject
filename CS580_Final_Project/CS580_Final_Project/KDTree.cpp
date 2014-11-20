@@ -47,7 +47,7 @@ void KDTriangle::generate_bounding_box(int index)
 
 	for (int i = 0; i < 3; ++i)
 	{
-		//vertexBuffer[index]
+
 	}
 }
 
