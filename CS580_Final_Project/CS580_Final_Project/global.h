@@ -6,6 +6,7 @@
 #include <string.h>
 #include "defines.h"
 #include "KDTree.h"
+#include "ReadObj.h"
 #pragma comment(lib, "glew32.lib")
 
 #include <gl\glew.h>

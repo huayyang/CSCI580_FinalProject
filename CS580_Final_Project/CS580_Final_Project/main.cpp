@@ -10,6 +10,10 @@ using namespace KDTree;
 
 void readFile()  // currently is premade
 {
+	ObjInfo objBox,objSphere;
+	objBox.readObj("box1.obj");
+	objSphere.readObj("gs.obj");
+
 	totalNum = 10;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
