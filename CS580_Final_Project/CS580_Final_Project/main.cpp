@@ -162,8 +162,8 @@ void initMaterials()
 void readFile()  // currently is premade
 { 
 	ObjInfo objBox,objSphere;
-	objBox.readObj("box1.obj");
-	objSphere.readObj("gs.obj");
+	objBox.readObj("box30.obj");
+	objSphere.readObj("sphere20.obj");
 
 	totalNum = 10;
 	size_t size = totalNum * 3;

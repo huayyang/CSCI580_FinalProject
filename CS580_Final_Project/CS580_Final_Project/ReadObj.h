@@ -35,4 +35,7 @@ class ObjInfo
 	  std::vector<FaceInfo> f;
 	  std::map<char *,vector<MtlInfo>> mltMap;
 	  void  readObj(char *objName);
+	  float3 worldPos;
+	  float3 rotate;
+	  float scale;
 	};

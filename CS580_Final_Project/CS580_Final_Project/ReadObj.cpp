@@ -244,10 +244,10 @@ while(infile.peek()!=-1){
 	  
 		x=getFloat(token);
 		y=getFloat(token);
-		z=getFloat(token);
+//		z=getFloat(token);
 		vt.push_back(x);
 		vt.push_back(y);
-		vt.push_back(z);
+	//	vt.push_back(z);
       continue;
     }
 	//get mtl lib
