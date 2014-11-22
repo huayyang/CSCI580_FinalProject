@@ -8,43 +8,6 @@ using namespace KDTree;
 #define zero(x) (((x)>0?(x):-(x))<eps)
 #define RAY_LENGTH 2000
 
-/* Operators */
-float3 operator+(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
-
-}
-
-float3 operator-(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
-
-}
-
-float3 operator*(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
-
-}
-
-float3 operator*(const float3 &a, const float &b) {
-
-	return make_float3(a.x * b, a.y * b, a.z * b);
-
-}
-
-bool operator==(const float3 &a, const float3 &b) {
-
-	return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
-
-}
-
-float3 operator/(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x / b.x, a.y / b.y, a.z / b.z);
-
-}
-
 float3 KDTree::crossProduct(float3 a, float3 b)
 {
 	float3 result;
