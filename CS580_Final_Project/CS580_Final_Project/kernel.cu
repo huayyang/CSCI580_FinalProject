@@ -241,7 +241,93 @@ __device__ void splitSort(float *A, int n, int low, int high)
 	splitSort(A,n,left+1,high);
 }
 
-__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,unsigned int width,unsigned int height,Camera cam,Photon* photons)
+__device__ uchar4 getColor(int currentIndex,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,float3 pos,float3 dir,Photon* photons)
+{
+	uchar4 resultColor;
+
+	float minDis = MAX_DIS;
+	int index = -1;
+	float3 hitpoint;
+
+	for(int k =0;k<count;k++)
+	{
+		if (k == currentIndex)
+			continue;
+		
+		float3 hitPos;
+		float distance = hitSurface(vertex + k * 3,pos,dir,&hitPos);
+		if (distance < minDis && distance > 0.001)
+		{
+			minDis = distance;
+			index = k;
+			hitpoint.x = hitPos.x;hitpoint.y = hitPos.y;hitpoint.z = hitPos.z;
+		}
+	}
+
+	resultColor.x = 0;
+	resultColor.y = 0;
+	resultColor.z = 0;
+
+	if (index != -1)
+	{
+		//printf("%d\n",(int)(materialIndex[index].x));
+		Material hitMat = materials[(int)(materialIndex[index].x)];
+		float Kd = hitMat.Kd;
+		float Ks = hitMat.Ks;
+		float Kni = 1 - Kd - Ks;
+		if (Kd > 0.001)
+		{
+			int radius = 50;
+			float distances[100] = {0};
+			for(int k = 0;k<100;k++)
+			{
+				float3 temp ;
+				temp.x = hitpoint.x - photons[k].pos.x;
+				temp.y = hitpoint.y - photons[k].pos.y;
+				temp.z = hitpoint.z - photons[k].pos.z;
+				float dis = dotProduct(temp, temp);
+				distances[k] = dis;
+			}
+			// sort and get the middle distance
+			//splitSort(distances,100,0,99);
+
+			//if (currentIndex != -1)
+			//	printf("%d \n",currentIndex);
+			resultColor.x += Kd * (color[index * 3].x / distances[radius] * 3000 > 255 ? 255 : color[index * 3].x / distances[radius] * 3000);
+			resultColor.y += Kd * (color[index * 3].y / distances[radius] * 3000 > 255 ? 255 : color[index * 3].y / distances[radius] * 3000);
+			resultColor.z += Kd * (color[index * 3].z / distances[radius] * 3000 > 255 ? 255 : color[index * 3].z / distances[radius] * 3000);
+		}
+
+		// sort and get the middle distance
+		//splitSort(distances,100,0,99);
+
+		if (Ks > 0.001)
+		{
+			float NdotDir = - dotProduct(normal[index * 3],dir);
+			float3 reflectDir;
+			reflectDir.x = normal[index * 3].x * 2 * NdotDir + dir.x;
+			reflectDir.y = normal[index * 3].y * 2 * NdotDir + dir.y;
+			reflectDir.z = normal[index * 3].z * 2 * NdotDir + dir.z;
+			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
+			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
+			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
+
+			uchar4 speculateColor = getColor(index,pixels,count,vertex,normal,color,materials,materialIndex,hitpoint,reflectDir,photons);
+			//currentIndex = index;
+			//pos = hitpoint;
+			//dir = reflectDir;
+			//goto START;
+			resultColor.x += Ks * speculateColor.x;
+			resultColor.y += Ks * speculateColor.y;
+			resultColor.z += Ks * speculateColor.z;
+
+		}
+	}
+
+	return resultColor;
+}
+
+__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,unsigned int width,unsigned int height,Camera cam,Photon* photons)
 {
     int i = blockIdx.x + indexX * unitX;
 	int j = blockIdx.y + indexY * unitY;
@@ -254,103 +340,11 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 	
 	dir = normalize(dir);
 
-	float minDis = MAX_DIS;
-	int index = -1;
-	float3 hitpoint;
-	for(int k =0;k<count;k++)
-	{
-		//float distance = checkDis(vertex + k * 3,cam.pos,dir);
-		float3 temp;
-		float distance = hitSurface(vertex + k * 3,cam.pos,dir,&temp);
-		if (distance < minDis)
-		{
-			minDis = distance;
-			index = k;
-			hitpoint.x = temp.x;hitpoint.y = temp.y;hitpoint.z = temp.z;
-		}
-	}
-	if (index != -1)
-	{
-		bool found = false;
-		int total = 0;
-		int radius = 50;
-		float distances[100] = {0};
-		for(int k = 0;k<100;k++)
-		{
-			float3 temp ;
-			temp.x = hitpoint.x - photons[k].pos.x;
-			temp.y = hitpoint.y - photons[k].pos.y;
-			temp.z = hitpoint.z - photons[k].pos.z;
-			float dis = dotProduct(temp, temp);
-			distances[k] = dis;
-		}
-
-		// sort and get the middle distance
-		//splitSort(distances,100,0,99);
-
-		if (!found)
-		{
-			pixels[i + j * width].x = color[index * 3].x / distances[radius] * 3000 > 255 ? 255 : color[index * 3].x / distances[radius] * 3000;
-			pixels[i + j * width].y = color[index * 3].y / distances[radius] * 3000 > 255 ? 255 : color[index * 3].y / distances[radius] * 3000;
-			pixels[i + j * width].z = color[index * 3].z / distances[radius] * 3000 > 255 ? 255 : color[index * 3].z / distances[radius] * 3000;
-		}
-	}
-	else
-	{
-		pixels[i + j * width].x = 0;
-		pixels[i + j * width].y = 0;
-		pixels[i + j * width].z = 0;
-	}
-}
-
-// Helper function for using CUDA to add vectors in parallel.
-void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color)
-{
-	Camera cam;
-	cam.pos = CAM_POS;
-	cam.lookat = CAM_LOOKAT;
-	cam.up = CAM_LOOKUP;
-	cam.right = CAM_LOOKRIGHT;
-	cam.fov = CAM_FOV;
-	cam.tan_fov_2 = tan(cam.fov * PI /2 / 180);
+	int id = i + j * width;
 	
-	int width = SCR_WIDTH;
-	int indexX = 0;
-	while( width != 0)
-	{
-		int x;
-		int height = SCR_HEIGHT;
-		int indexY = 0;
-
-		if (width > UNIT_X)
-			x = UNIT_X;
-		else
-			x = width;
-
-		while(height != 0)
-		{
-			int y;
-			if (height > UNIT_Y)
-				y = UNIT_Y;
-			else
-				y = height;
-
-			dim3 dimblock(x,y);
-			// Launch a kernel on the GPU with one thread for each element.
-			//kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam);
-
-			cudaThreadSynchronize();  
-
-			height -= y;
-			indexY++;
-		}
-		width -= x;
-		indexX++;
-	}
-
+	pixels[id] = getColor(-1,pixels,count,vertex,normal,color,materials,materialIndex,cam.pos,dir,photons);
+	
 }
-
-
 
 __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* photons, float3 lightPos)
 {
@@ -398,7 +392,7 @@ __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* phot
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color, Photon* photons)
+void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color, Photon* photons, Material* materials, uchar1* materialIndex)
 {
 	dim3 photonBlock(10,10);
 	// compute light photons
@@ -445,7 +439,7 @@ void rayTracingCuda2(uchar4 * pixels,int count,float3* vertex,float3* normal,uch
 			dim3 dimblock(x,y);
 
 			// Launch a kernel on the GPU with one thread for each element.
-			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,SCR_WIDTH,SCR_HEIGHT,cam,photons);
+			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,materials,materialIndex,SCR_WIDTH,SCR_HEIGHT,cam,photons);
 
 			cudaThreadSynchronize();  
 

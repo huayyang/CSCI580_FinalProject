@@ -8,36 +8,8 @@ using namespace std;
 using namespace KDTree;
 #define PHOTON_NUM 100
 
-void readFile()  // currently is premade
+int initCornellBox()
 {
-	ObjInfo objBox,objSphere;
-	objBox.readObj("box1.obj");
-	objSphere.readObj("gs.obj");
-
-	totalNum = 10;
-	size_t size = totalNum * 3;
-	vertexBuffer = (float3*)malloc(size * sizeof(float3));
-	memset(vertexBuffer, 0, size * sizeof(float3));
-	cudaMalloc((void**)&vertexBuffer_CUDA,size * sizeof(float3));
-
-	normalBuffer = (float3*)malloc(size * sizeof(float3));
-	memset(normalBuffer, 0, size * sizeof(float3));
-	cudaMalloc((void**)&normalBuffer_CUDA,size * sizeof(float3));
-	
-	colorBuffer = (uchar4*)malloc(size * sizeof(uchar4));
-	memset(colorBuffer, 0, size * sizeof(uchar4));
-	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
-
-
-	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
-	memset(kdTriangles, 0, size * sizeof(KDTriangle));
-
-	photonBuffer = (Photon*)malloc(PHOTON_NUM * sizeof(Photon));
-	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
-	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
-
-
-
 	//temp
 	vertexBuffer[0] = make_float3(0,0,0);
 	vertexBuffer[1] = make_float3(100,0,100);
@@ -152,7 +124,74 @@ void readFile()  // currently is premade
 	colorBuffer[27] = make_uchar4(0,g,b,a);
 	colorBuffer[28] = make_uchar4(0,g,b,a);
 	colorBuffer[29] = make_uchar4(0,g,b,a);
+
+
+	materialIndexBuffer[0] = make_uchar1(1);
+	materialIndexBuffer[1] = make_uchar1(1);
+	materialIndexBuffer[2] = make_uchar1(0);
+	materialIndexBuffer[3] = make_uchar1(0);
+	materialIndexBuffer[4] = make_uchar1(0);
+	materialIndexBuffer[5] = make_uchar1(0);
+	materialIndexBuffer[6] = make_uchar1(0);
+	materialIndexBuffer[7] = make_uchar1(0);
+	materialIndexBuffer[8] = make_uchar1(0);
+	materialIndexBuffer[9] = make_uchar1(0);
 	//
+
+	return 10;
+}
+
+void initMaterials()
+{
+	int materialNum = 2;
+	materialBuffer = (Material*)malloc(materialNum * sizeof(Material));
+	memset(materialBuffer, 0, materialNum * sizeof(Material));
+	cudaMalloc((void**)&materialBuffer_CUDA, materialNum * sizeof(Material));
+	
+	materialBuffer[0].Kd = 1.0f;
+	materialBuffer[0].Ks = 0.0f;
+	materialBuffer[0].Ni = 1.0f;
+
+	materialBuffer[1].Kd = 0.4f;
+	materialBuffer[1].Ks = 0.6f;
+	materialBuffer[1].Ni = 1.0f;
+
+	cudaMemcpy(materialBuffer_CUDA,materialBuffer, materialNum * sizeof(Material),cudaMemcpyHostToDevice);
+}
+
+void readFile()  // currently is premade
+{ 
+	ObjInfo objBox,objSphere;
+	objBox.readObj("box30.obj");
+	objSphere.readObj("sphere20.obj");
+
+	totalNum = 10;
+	size_t size = totalNum * 3;
+	vertexBuffer = (float3*)malloc(size * sizeof(float3));
+	memset(vertexBuffer, 0, size * sizeof(float3));
+	cudaMalloc((void**)&vertexBuffer_CUDA,size * sizeof(float3));
+
+	normalBuffer = (float3*)malloc(size * sizeof(float3));
+	memset(normalBuffer, 0, size * sizeof(float3));
+	cudaMalloc((void**)&normalBuffer_CUDA,size * sizeof(float3));
+	
+	colorBuffer = (uchar4*)malloc(size * sizeof(uchar4));
+	memset(colorBuffer, 0, size * sizeof(uchar4));
+	cudaMalloc((void**)&colorBuffer_CUDA,size * sizeof(uchar4));
+	
+	materialIndexBuffer = (uchar1*)malloc(totalNum * sizeof(uchar1));
+	memset(materialIndexBuffer, 0, totalNum * sizeof(uchar1));
+	cudaMalloc((void**)&materialIndexBuffer_CUDA,totalNum * sizeof(uchar1));
+
+
+	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
+	memset(kdTriangles, 0, size * sizeof(KDTriangle));
+
+	photonBuffer = (Photon*)malloc(PHOTON_NUM * sizeof(Photon));
+	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
+	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
+
+	initCornellBox();
 
 	for(int i = 0;i<PHOTON_NUM;i++)
 	{
@@ -163,6 +202,7 @@ void readFile()  // currently is premade
 	cudaMemcpy(vertexBuffer_CUDA,vertexBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(normalBuffer_CUDA,normalBuffer,size * sizeof(float3),cudaMemcpyHostToDevice);
 	cudaMemcpy(colorBuffer_CUDA,colorBuffer,size * sizeof(uchar4),cudaMemcpyHostToDevice);
+	cudaMemcpy(materialIndexBuffer_CUDA,materialIndexBuffer,totalNum * sizeof(uchar1),cudaMemcpyHostToDevice);
 
 	cudaMemcpy(photonBuffer_CUDA,photonBuffer, PHOTON_NUM * sizeof(Photon),cudaMemcpyHostToDevice);
 
@@ -212,6 +252,8 @@ void init()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);  
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+
+	initMaterials();
 }  
 
 void draw()  
@@ -229,27 +271,6 @@ void draw()
 	glTexCoord2f(1.0f,1.0f); glVertex3f(1.0f,0.0f,0.0f);  
 	glEnd(); 
 
-
-	// ==============================
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// 清除屏幕和深度缓存
-	//glLoadIdentity();// 重置当前的模型观察矩阵
-	//glColor3f(1.0,1.0,0.0);
-
-	//glEnable( GL_POINT_SMOOTH );
-	//glEnable( GL_BLEND );
-	//glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	//glClearDepth(1.0f);
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_LEQUAL);
-	//glPointSize(20);
-	//
-	//glBegin(GL_POINTS);
-	//	
-	//	glVertex3f(0,0,0.1);
-	//glEnd();
-	//glFlush(); 
-	// ============================
-
 	glutSwapBuffers();  
 }  
 
@@ -266,7 +287,7 @@ void display()
     cudaGraphicsResourceGetMappedPointer((void**)&pixelPtr, &num_bytes, screenBufferPBO_CUDA);  
 
 	//rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
-	rayTracingCuda2(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA, photonBuffer_CUDA);
+	rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA, photonBuffer_CUDA,materialBuffer_CUDA,materialIndexBuffer_CUDA);
 
 	uchar4 * tmp = (uchar4*)malloc(sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT);
 	for(int i = 0;i<100;i++)
@@ -288,6 +309,10 @@ void reshape(int w, int h)
 //***********************************************
 int main(int argc, char **argv)
 {
+	size_t value;
+	cudaDeviceGetLimit(&value, cudaLimitStackSize);
+	cudaDeviceSetLimit(cudaLimitStackSize, value * 2);
+
 	glutInit(&argc, argv);  
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  
     glutInitWindowSize(SCR_WIDTH, SCR_HEIGHT);  
@@ -307,7 +332,7 @@ int main(int argc, char **argv)
   
     glOrtho(0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);  
     glutDisplayFunc(display);  
-    glutReshapeFunc(reshape);  
+    //glutReshapeFunc(reshape);  
 	rendered = false;
     glutMainLoop();  
 

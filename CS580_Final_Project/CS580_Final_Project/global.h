@@ -21,6 +21,8 @@ extern GLuint screenBufferPBO;
 extern GLuint screenTexture2D;
 extern float3 *vertexBuffer, *normalBuffer;
 extern uchar4 *colorBuffer;
+extern Material *materialBuffer;
+extern uchar1 *materialIndexBuffer;
 
 extern KDTree::KDTriangle *kdTriangles;
 
@@ -39,3 +41,4 @@ float3 operator*(const float3 &a, const float &b);
 float3 operator/(const float3 &a, const float3 &b);
 bool operator==(const float3 &a, const float3 &b);
 #endif
+

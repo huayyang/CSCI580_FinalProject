@@ -8,6 +8,7 @@
 
 static int UNIT_X = 256;
 static int UNIT_Y = 256;
+
 static int SCR_WIDTH = 1024;
 static int SCR_HEIGHT = 1024;
 static float3 CAM_POS = make_float3(50,100,50);
@@ -23,6 +24,12 @@ typedef struct {
 	float fov;
 	float tan_fov_2;
 }Camera;
+
+typedef struct {
+	float Kd; //diffuse reflection
+	float Ks; //speculate reflection
+	float Ni; //refraction
+}Material;
 
 typedef struct {
 	float3 pos;
