@@ -159,13 +159,55 @@ void initMaterials()
 	cudaMemcpy(materialBuffer_CUDA,materialBuffer, materialNum * sizeof(Material),cudaMemcpyHostToDevice);
 }
 
+float3 float3Plusfloat3(float3 a, float3 b)
+{
+	float3 res;
+	res.x = a.x+b.x;
+	res.y = a.y+b.y;
+	res.z = a.z+b.z;
+	return res;
+}
+
+//yating
+int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
+{
+
+	unsigned char r = (255) & 0xff;  
+	unsigned char g = (255) & 0xff;  
+	unsigned char b = (255) & 0xff;  
+	unsigned char a = (255) & 0xff;  
+
+	int order = existFaceNum*3; 
+	int faceOrder = existFaceNum;
+	int faceSize  = obj.f.size();
+	int testnum = obj.f[0].vertexIndex[0];
+ 
+	for(int i=0;i<faceSize;i++)
+	{
+		vertexBuffer[order] =float3Plusfloat3( obj.v[ obj.f[i].vertexIndex[0]-1],offset);
+		normalBuffer[order] = obj.vn[(obj.f[i].normalIndex[0])-1];
+		colorBuffer[order] = make_uchar4(r,g,b,a);
+
+		vertexBuffer[order+1] =float3Plusfloat3( obj.v[ obj.f[i].vertexIndex[1]-1],offset);
+		normalBuffer[order+1] = obj.vn[(obj.f[i].normalIndex[1])-1];
+		colorBuffer[order+1] = make_uchar4(r,g,b,a);
+
+		vertexBuffer[order+2] =float3Plusfloat3 (obj.v[ obj.f[i].vertexIndex[2]-1],offset);
+		normalBuffer[order+2] = obj.vn[(obj.f[i].normalIndex[2])-1];
+		colorBuffer[order+2] = make_uchar4(r,g,b,a);
+		order+=3;
+
+		materialIndexBuffer[faceOrder] = make_uchar1(materialIndex);
+		faceOrder++;
+	}
+	return  faceSize;
+}
+
 void readFile()  // currently is premade
 { 
-	ObjInfo objBox,objSphere;
-	objBox.readObj("box30.obj");
-	objSphere.readObj("sphere20.obj");
 
-	totalNum = 10;
+
+	totalNum =22;//10+760;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -191,8 +233,13 @@ void readFile()  // currently is premade
 	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
 	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
 
-	initCornellBox();
-
+	//yating edit
+	ObjInfo objBox;
+	objBox.readObj("box30.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
+	int curTotalTriFace = initCornellBox();
+ 
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15 ),0);
+ 
 	for(int i = 0;i<PHOTON_NUM;i++)
 	{
 		photonBuffer[i].pos = make_float3(5-i/10,5-i%10,0);
@@ -226,6 +273,8 @@ void readFile()  // currently is premade
 	KDTriangle hitTriangle;
 	KDTreeRoot->hit(KDTreeRoot,pos,dir,&hitPos,&hitTriangle);
 }
+
+
 
 void init()  
 {  

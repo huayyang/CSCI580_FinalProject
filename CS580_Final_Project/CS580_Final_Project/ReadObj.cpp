@@ -212,42 +212,34 @@ while(infile.peek()!=-1){
 
     // vertex
     if (token[0] == 'v' && isSpace((token[1]))) {
-      token += 2;
-      float x, y, z;
-	  
-		x=getFloat(token);
-		y=getFloat(token);
-		z=getFloat(token);
-		v.push_back(x);
-		v.push_back(y);
-		v.push_back(z);
+		token += 2;
+
+		float3 temp;
+		temp.x=getFloat(token);
+		temp.y=getFloat(token);
+		temp.z=getFloat(token);
+		v.push_back(temp);
       continue;
     }
 	//normal
     if (token[0] == 'v' &&token[1] == 'n' && isSpace((token[2]))) {
-      token += 3;
-      float x, y, z;
+		token += 3;
 	  
-		x=getFloat(token);
-		y=getFloat(token);
-		z=getFloat(token);
-		vn.push_back(x);
-		vn.push_back(y);
-		vn.push_back(z);
+		float3 temp;
+		temp.x=getFloat(token);
+		temp.y=getFloat(token);
+		temp.z=getFloat(token);
+		vn.push_back(temp);
       continue;
     }
 
 	//uv
     if (token[0] == 'v' &&token[1] == 't' && isSpace((token[2]))) {
       token += 3;
-      float x, y, z;
-	  
-		x=getFloat(token);
-		y=getFloat(token);
-//		z=getFloat(token);
-		vt.push_back(x);
-		vt.push_back(y);
-	//	vt.push_back(z);
+		float2 temp;
+		temp.x=getFloat(token);
+		temp.y=getFloat(token);
+		vt.push_back(temp);
       continue;
     }
 	//get mtl lib

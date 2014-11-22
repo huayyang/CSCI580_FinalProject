@@ -29,9 +29,9 @@ struct MtlInfo{
 class ObjInfo
 	{
 	public:
-	  std::vector<float> v;
-	  std::vector<float> vn;
-	  std::vector<float> vt;
+	  std::vector<float3> v;
+	  std::vector<float3> vn;
+	  std::vector<float2> vt;
 	  std::vector<FaceInfo> f;
 	  std::map<char *,vector<MtlInfo>> mltMap;
 	  void  readObj(char *objName);
