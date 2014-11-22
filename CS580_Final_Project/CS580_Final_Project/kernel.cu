@@ -286,7 +286,7 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 		}
 
 		// sort and get the middle distance
-		splitSort(distances,100,0,99);
+		//splitSort(distances,100,0,99);
 
 		if (!found)
 		{

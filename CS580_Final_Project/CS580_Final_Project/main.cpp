@@ -166,18 +166,25 @@ void readFile()  // currently is premade
 
 	cudaMemcpy(photonBuffer_CUDA,photonBuffer, PHOTON_NUM * sizeof(Photon),cudaMemcpyHostToDevice);
 
-	for (int i = 0; i < size; ++i)
+	vector<KDTriangle*> tris;
+	for (int i = 0; i < totalNum; ++i)
 	{
 		for (int j = 0; j < 3; ++j)
 		{
-			kdTriangles[i].index[j] = i;
-			//kdTriangles[i].generate_bounding_box(i);
+			kdTriangles[i].index[j] = 3*i+j;
 		}
-		
+		kdTriangles[i].generate_bounding_box();
+		tris.push_back(&kdTriangles[i]);
 	}
-	//KDNode* KDTreeRoot = new KDNode();
-	//KDTreeRoot->build();
 
+	KDNode* KDTreeRoot = (KDNode*) malloc(sizeof(KDNode));
+	KDTreeRoot = KDTreeRoot->build(tris, 0);
+	float3 pos = make_float3(50, 100, 50);
+	float3 dir = make_float3(-1,-1.5,0);
+	dir = normalize(dir);
+	float3 hitPos;
+	KDTriangle hitTriangle;
+	KDTreeRoot->hit(KDTreeRoot,pos,dir,&hitPos,&hitTriangle);
 }
 
 void init()  

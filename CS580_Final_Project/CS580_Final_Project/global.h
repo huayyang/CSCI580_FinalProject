@@ -17,18 +17,25 @@
 
 #pragma comment(lib, "glew32.lib")
 
-static GLuint screenBufferPBO;
-static GLuint screenTexture2D;
-static float3 *vertexBuffer, *normalBuffer;
-static uchar4 *colorBuffer;
+extern GLuint screenBufferPBO;
+extern GLuint screenTexture2D;
+extern float3 *vertexBuffer, *normalBuffer;
+extern uchar4 *colorBuffer;
 
-static KDTree::KDTriangle *kdTriangles;
+extern KDTree::KDTriangle *kdTriangles;
 
-static GLuint photonBufferPBO;
-static Photon *photonBuffer;
+extern GLuint photonBufferPBO;
+extern Photon *photonBuffer;
 
-static int totalNum;
-static bool rendered;
-static struct cudaGraphicsResource* screenBufferPBO_CUDA;
-static struct cudaGraphicsResource* photonBufferPBO_CUDA;
+extern int totalNum;
+extern bool rendered;
+extern struct cudaGraphicsResource* screenBufferPBO_CUDA;
+extern struct cudaGraphicsResource* photonBufferPBO_CUDA;
+
+float3 operator+(const float3 &a, const float3 &b);
+float3 operator-(const float3 &a, const float3 &b);
+float3 operator*(const float3 &a, const float3 &b);
+float3 operator*(const float3 &a, const float &b);
+float3 operator/(const float3 &a, const float3 &b);
+bool operator==(const float3 &a, const float3 &b);
 #endif
