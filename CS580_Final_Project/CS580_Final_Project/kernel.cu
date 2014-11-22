@@ -245,7 +245,6 @@ __device__ uchar4 getColor(int currentIndex,uchar4 * pixels,int count,float3* ve
 {
 	uchar4 resultColor;
 
-START:
 	float minDis = MAX_DIS;
 	int index = -1;
 	float3 hitpoint;
@@ -254,7 +253,7 @@ START:
 	{
 		if (k == currentIndex)
 			continue;
-		//float distance = checkDis(vertex + k * 3,cam.pos,dir);
+		
 		float3 hitPos;
 		float distance = hitSurface(vertex + k * 3,pos,dir,&hitPos);
 		if (distance < minDis && distance > 0.001)
@@ -309,14 +308,14 @@ START:
 			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
-			//uchar4 speculateColor = getColor(index,pixels,count,vertex,normal,color,materials,materialIndex,hitpoint,reflectDir,photons);
-			currentIndex = index;
-			pos = hitpoint;
-			dir = reflectDir;
-			goto START;
-			//resultColor.x += Ks * speculateColor.x;
-			//resultColor.y += Ks * speculateColor.y;
-			//resultColor.z += Ks * speculateColor.z;
+			uchar4 speculateColor = getColor(index,pixels,count,vertex,normal,color,materials,materialIndex,hitpoint,reflectDir,photons);
+			//currentIndex = index;
+			//pos = hitpoint;
+			//dir = reflectDir;
+			//goto START;
+			resultColor.x += Ks * speculateColor.x;
+			resultColor.y += Ks * speculateColor.y;
+			resultColor.z += Ks * speculateColor.z;
 
 		}
 	}

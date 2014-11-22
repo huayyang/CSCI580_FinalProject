@@ -152,8 +152,8 @@ void initMaterials()
 	materialBuffer[0].Ks = 0.0f;
 	materialBuffer[0].Ni = 1.0f;
 
-	materialBuffer[1].Kd = 0.0f;
-	materialBuffer[1].Ks = 1.0f;
+	materialBuffer[1].Kd = 0.4f;
+	materialBuffer[1].Ks = 0.6f;
 	materialBuffer[1].Ni = 1.0f;
 
 	cudaMemcpy(materialBuffer_CUDA,materialBuffer, materialNum * sizeof(Material),cudaMemcpyHostToDevice);
@@ -298,6 +298,10 @@ void reshape(int w, int h)
 //***********************************************
 int main(int argc, char **argv)
 {
+	size_t value;
+	cudaDeviceGetLimit(&value, cudaLimitStackSize);
+	cudaDeviceSetLimit(cudaLimitStackSize, value * 2);
+
 	glutInit(&argc, argv);  
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  
     glutInitWindowSize(SCR_WIDTH, SCR_HEIGHT);  
