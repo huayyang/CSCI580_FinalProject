@@ -198,6 +198,35 @@ __device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho)
 		return MAX_DIS;
 }
 
+__device__ float3 getR(float ni, float3 I, float3 N)
+{
+	float3 planeNormal = crossProduct(N,I);
+	float3 biNormal = crossProduct(planeNormal,N);
+	float sinI = dotProduct(biNormal,I);
+	float sinR = sinI / ni;
+	float cosR = sqrtf(1 - sinR *sinR);
+
+	float3 R;
+	R.x = biNormal.x * sinR + N.x * cosR;
+	R.y = biNormal.y * sinR + N.y * cosR;
+	R.z = biNormal.z * sinR + N.z * cosR;
+
+	return R;
+}
+
+__device__ float3 getI(float ni,float3 R,float3 N)
+{
+	float3 planeNormal = crossProduct(R,N);
+	float3 biNormal = crossProduct(planeNormal,N);
+	float sinR = -dotProduct(biNormal,R);
+	float sinI = sinR * ni;
+	float cosI = sqrtf(1 - sinI *sinI);
+
+	float3 I;
+	I.x = biNormal.x * sinI + N.x * cosI;
+	I.y = biNormal.y * sinI + N.y * cosI;
+	I.z = biNormal.z * sinI + N.z * cosI;
+}
 
 __device__ void swapValue(float &a, float &b){
 	float temp = a;
@@ -273,7 +302,7 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 		Material hitMat = materials[(int)(materialIndex[index].x)];
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
-		float Kni = 1 - Kd - Ks;
+		float Kni = hitMat.Kni;
 		if (Kd > 0.001)
 		{
 			int radius = 50;
@@ -292,9 +321,14 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 
 			//if (currentIndex != -1)
 			//	printf("%d \n",currentIndex);
-			resultColor.x += Kd * (color[index * 3].x / distances[radius] * 3000 > 255 ? 255 : color[index * 3].x / distances[radius] * 3000);
-			resultColor.y += Kd * (color[index * 3].y / distances[radius] * 3000 > 255 ? 255 : color[index * 3].y / distances[radius] * 3000);
-			resultColor.z += Kd * (color[index * 3].z / distances[radius] * 3000 > 255 ? 255 : color[index * 3].z / distances[radius] * 3000);
+			
+			int3 colorInt;
+			colorInt.x = resultColor.x + Kd * color[index * 3].x / distances[radius] * 3000;
+			colorInt.y = resultColor.y + Kd * color[index * 3].y / distances[radius] * 3000;
+			colorInt.z = resultColor.z + Kd * color[index * 3].z / distances[radius] * 3000;
+			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
+			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
 		}
 
 		// sort and get the middle distance
@@ -312,13 +346,38 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
 			uchar4 speculateColor = getColor(index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
-			//currentIndex = index;
-			//pos = hitpoint;
-			//dir = reflectDir;
-			//goto START;
-			resultColor.x += Ks * speculateColor.x;
-			resultColor.y += Ks * speculateColor.y;
-			resultColor.z += Ks * speculateColor.z;
+			
+			int3 colorInt;
+			colorInt.x = resultColor.x + Ks * speculateColor.x;
+			colorInt.y = resultColor.y + Ks * speculateColor.y;
+			colorInt.z = resultColor.z + Ks * speculateColor.z;
+			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
+			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+
+		}
+
+		if (Kni > 0.001)
+		{
+			float Ni = hitMat.Ni;
+			float NdotDir = -dotProduct(normal[index * 3], dir);
+			float3 reflectDir;
+			reflectDir.x = normal[index * 3].x * 2 * NdotDir + dir.x;
+			reflectDir.y = normal[index * 3].y * 2 * NdotDir + dir.y;
+			reflectDir.z = normal[index * 3].z * 2 * NdotDir + dir.z;
+			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
+			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
+			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
+
+			uchar4 refractColor = getColor(index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
+			
+			int3 colorInt;
+			colorInt.x = resultColor.x + Ks * refractColor.x;
+			colorInt.y = resultColor.y + Ks * refractColor.y;
+			colorInt.z = resultColor.z + Ks * refractColor.z;
+			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
+			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
 
 		}
 	}

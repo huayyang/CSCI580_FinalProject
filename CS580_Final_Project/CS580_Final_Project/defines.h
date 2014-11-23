@@ -6,8 +6,8 @@
 #define PI 3.14159265358979323846
 #define MAX_DIS 1000000
 
-static int UNIT_X = 256;
-static int UNIT_Y = 256;
+static int UNIT_X = 128;
+static int UNIT_Y = 128;
 
 static int SCR_WIDTH = 1024;
 static int SCR_HEIGHT = 1024;
@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
 	float Kd; //diffuse reflection
 	float Ks; //speculate reflection
+	float Kni; //refraction
 	float Ni; //refraction
 }Material;
 

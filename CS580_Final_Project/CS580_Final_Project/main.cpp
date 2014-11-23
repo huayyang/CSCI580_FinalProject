@@ -125,8 +125,8 @@ int initCornellBox()
 	colorBuffer[29] = make_uchar4(0, g, b, a);
 
 
-	materialIndexBuffer[0] = make_uchar1(1);
-	materialIndexBuffer[1] = make_uchar1(1);
+	materialIndexBuffer[0] = make_uchar1(0);
+	materialIndexBuffer[1] = make_uchar1(0);
 	materialIndexBuffer[2] = make_uchar1(0);
 	materialIndexBuffer[3] = make_uchar1(0);
 	materialIndexBuffer[4] = make_uchar1(0);
@@ -149,10 +149,12 @@ void initMaterials()
 
 	materialBuffer[0].Kd = 1.0f;
 	materialBuffer[0].Ks = 0.0f;
+	materialBuffer[0].Kni = 0.0f;
 	materialBuffer[0].Ni = 1.0f;
 
-	materialBuffer[1].Kd = 0.4f;
-	materialBuffer[1].Ks = 0.6f;
+	materialBuffer[1].Kd = 1.0f;
+	materialBuffer[1].Ks = 0.2f;
+	materialBuffer[0].Kni = 0.0f;
 	materialBuffer[1].Ni = 1.0f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
@@ -173,9 +175,9 @@ float3 float3Plusfloat3(float3 a, float3 b)
 int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 {
 
-	unsigned char r = (255) & 0xff;
-	unsigned char g = (255) & 0xff;
-	unsigned char b = (255) & 0xff;
+	unsigned char r = (100) & 0xff;
+	unsigned char g = (100) & 0xff;
+	unsigned char b = (0) & 0xff;
 	unsigned char a = (255) & 0xff;
 
 	int order = existFaceNum * 3;
@@ -210,7 +212,7 @@ void readFile()  // currently is premade
 {
 
 
-	totalNum = 10+760;
+	totalNum = 22;//10+760;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -238,7 +240,7 @@ void readFile()  // currently is premade
 
 	//yating edit
 	ObjInfo objBox;
-	objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
+	objBox.readObj("box30.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
 	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15 ),1);
 
