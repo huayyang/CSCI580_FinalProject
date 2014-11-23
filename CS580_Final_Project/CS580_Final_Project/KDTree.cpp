@@ -413,26 +413,36 @@ float KDTriangle::hit(const float3& pos, const float3& dir, float3* hitPos)
 	return hitSurface(vertex, pos, dir, hitPos);
 }
 
-void KDNode::expand(vector<KDTriangle*>& tris)
+void KDNode::expand(device_vector<KDTriangle*>& tris)
 {
 	float3 bmin, bmax;
 	bmin.x = INT_MAX;
 	bmin.y = INT_MAX;
 	bmin.z = INT_MAX;
 	memset(&bmax, 0, sizeof(float3));
-	for (vector<KDTriangle*>::iterator it = tris.begin(); it != tris.end(); it++)
+	for (int i = 0; i<tris.size(); ++i)
 	{
-		if (bmin.x > (*it)->bbox.min.x)bmin.x = (*it)->bbox.min.x;
-		if (bmin.y > (*it)->bbox.min.y)bmin.y = (*it)->bbox.min.y;
-		if (bmin.z > (*it)->bbox.min.z)bmin.z = (*it)->bbox.min.z;
+		if (bmin.x > (*(tris[i])).bbox.min.x)bmin.x = (*(tris[i])).bbox.min.x;
+		if (bmin.y > (*(tris[i])).bbox.min.y)bmin.y = (*(tris[i])).bbox.min.y;
+		if (bmin.z > (*(tris[i])).bbox.min.z)bmin.z = (*(tris[i])).bbox.min.z;
 
-		if (bmax.x < (*it)->bbox.max.x)bmax.x = (*it)->bbox.max.x;
-		if (bmax.y < (*it)->bbox.max.y)bmax.y = (*it)->bbox.max.y;
-		if (bmax.z < (*it)->bbox.max.z)bmax.z = (*it)->bbox.max.z;
+		if (bmax.x < (*(tris[i])).bbox.max.x)bmax.x = (*(tris[i])).bbox.max.x;
+		if (bmax.y < (*(tris[i])).bbox.max.y)bmax.y = (*(tris[i])).bbox.max.y;
+		if (bmax.z < (*(tris[i])).bbox.max.z)bmax.z = (*(tris[i])).bbox.max.z;
 	}
+	//for (device_vector<KDTriangle*>::iterator it = tris.begin(); it != tris.end(); it++)
+	//{
+	//	if (bmin.x > (*it)->bbox.min.x)bmin.x = (*it)->bbox.min.x;
+	//	if (bmin.y > (*it)->bbox.min.y)bmin.y = (*it)->bbox.min.y;
+	//	if (bmin.z > (*it)->bbox.min.z)bmin.z = (*it)->bbox.min.z;
+
+	//	if (bmax.x < (*it)->bbox.max.x)bmax.x = (*it)->bbox.max.x;
+	//	if (bmax.y < (*it)->bbox.max.y)bmax.y = (*it)->bbox.max.y;
+	//	if (bmax.z < (*it)->bbox.max.z)bmax.z = (*it)->bbox.max.z;
+	//}
 };
 
-KDNode* KDNode::build(vector<KDTriangle*>& tris, int depth) const
+KDNode* KDNode::build(device_vector<KDTriangle*>& tris, int depth) const
 {
 	KDNode* node = new KDNode();
 	node->triangles = tris;
@@ -442,46 +452,46 @@ KDNode* KDNode::build(vector<KDTriangle*>& tris, int depth) const
 
 	if (tris.size() == 0)
 		return node;
-	 
+	KDTriangle* ptr = (tris[0]);
 	if (tris.size() == 1)
 	{
-		node->bbox = tris[0]->bbox;
+		node->bbox = (*tris[0]).bbox;
 		node->left = new KDNode();
 		node->right = new KDNode();
-		node->left->triangles = vector<KDTriangle*>();
-		node->right->triangles = vector<KDTriangle*>();
+		node->left->triangles = device_vector<KDTriangle*>();
+		node->right->triangles = device_vector<KDTriangle*>();
 		return node;
 	}
 
-	node->bbox = tris[0]->bbox;
+	node->bbox = (*tris[0]).bbox;
 
 	node->expand(tris);
 
 	float3 midpt;
 	memset(&midpt, 0, sizeof(float3));
 
-	for (vector<KDTriangle*>::iterator it = tris.begin(); it != tris.end(); it++)
+	for (int i = 0; i<tris.size(); ++i)
 	{
-		midpt.x += ((*it)->get_midpoint().x * (1.0 / tris.size()));
-		midpt.y += ((*it)->get_midpoint().y * (1.0 / tris.size()));
-		midpt.z += ((*it)->get_midpoint().z * (1.0 / tris.size()));
+		midpt.x += (*(tris[i])).get_midpoint().x * (1.0 / tris.size());
+		midpt.y += (*(tris[i])).get_midpoint().y * (1.0 / tris.size());
+		midpt.z += (*(tris[i])).get_midpoint().z * (1.0 / tris.size());
 	}
 
-	vector<KDTriangle*> left_tris;
-	vector<KDTriangle*> right_tris;
+	device_vector<KDTriangle*> left_tris;
+	device_vector<KDTriangle*> right_tris;
 	int axis = node->bbox.longest_axis();
 	for (int i = 0; i < tris.size(); ++i)
 	{
 		switch (axis)
 		{
 		case 0:
-			midpt.x <= tris[i]->get_midpoint().x ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
+			midpt.x <= (*(tris[i])).get_midpoint().x ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
 			break;
 		case 1:
-			midpt.y <= tris[i]->get_midpoint().y ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
+			midpt.y <= (*(tris[i])).get_midpoint().y ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
 			break;
 		case 2:
-			midpt.z <= tris[i]->get_midpoint().z ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
+			midpt.z <= (*(tris[i])).get_midpoint().z ? right_tris.push_back(tris[i]) : left_tris.push_back(tris[i]);
 			break;
 		}
 	}
@@ -507,8 +517,8 @@ KDNode* KDNode::build(vector<KDTriangle*>& tris, int depth) const
 	{
 		node->left = new KDNode();
 		node->right = new KDNode();
-		node->left->triangles = vector<KDTriangle*>();
-		node->right->triangles = vector<KDTriangle*>();
+		node->left->triangles = device_vector<KDTriangle*>();
+		node->right->triangles = device_vector<KDTriangle*>();
 	}
 	return node;
 }
@@ -532,7 +542,7 @@ bool KDNode::hit(KDNode* node, const float3 &pos, const float3 &dir, float3* hit
 			float t = INT_MAX, tmin = INT_MAX;
 			for (int i = 0; i < node->triangles.size(); ++i)
 			{
-				t = node->triangles[i]->hit(pos, dir, hitPos);
+				t = (*node->triangles[i]).hit(pos, dir, hitPos);
 				if (t < MAX_DIS)
 				{
 					if (t < tmin)
