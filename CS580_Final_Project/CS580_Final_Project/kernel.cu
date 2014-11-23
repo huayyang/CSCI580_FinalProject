@@ -269,6 +269,77 @@ __device__ void splitSort(float *A, int n, int low, int high)
 	splitSort(A, n, left + 1, high);
 }
 
+//yating add lerp
+__device__ float getIntrValue(float3 *curVertex, float3 hitpoint)
+{
+	float res;
+	float3 edge01,edge02;
+	edge01.x = curVertex[1].x-curVertex[0].x;
+	edge01.y = curVertex[1].y-curVertex[0].y;  
+	edge01.z = curVertex[1].z-curVertex[0].z; 
+
+	edge02.x = curVertex[2].x-curVertex[0].x;
+	edge02.y = curVertex[2].y-curVertex[0].y;  
+	edge02.z = curVertex[2].z-curVertex[0].z; 
+
+	float3 cross = crossProduct(edge02,edge01);
+
+	//fumula  ax + by + cz = d
+	float d = (cross.x*curVertex[1].x  + cross.y*curVertex[1].y + cross.z*curVertex[1].z );
+
+	//calculate z value  z =( d-ax -by )/c
+	if(cross.z >10e-6 || cross.z <-10e-6){
+		res = ( d - (cross.x* hitpoint.x) - (cross.y*hitpoint.y)) / cross.z; 
+		 
+	}
+	else return NULL;
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+//
+//	printf("%d %f %f %f \n",faceIndex,curVertex[2].x,curVertex[2].y,curVertex[2].z);
+	return res;
+}
+__device__ float3  lerp(int faceIndex, float3 *curVertex,float3 *curFnormal,float3 hitpoint)
+{
+		//IsInside(hitpoint, curVertex);
+ //printf("%d %f %f %f \n",faceIndex,curFnormal[2].x,curFnormal[2].y,curFnormal[2].z);
+		float3 res;
+
+		float3 test[3];
+
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].x;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].x;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].x;
+		res.x =getIntrValue(test,hitpoint);
+		if(res.x ==NULL)
+			res.x = (curFnormal[0].x+ curFnormal[1].x+ curFnormal[2].x)/3;
+
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].y;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].y;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].y;
+		res.y =getIntrValue(test,hitpoint);
+				if(res.y ==NULL)
+			res.y = (curFnormal[0].y +curFnormal[1].y+curFnormal[2].y)/3;
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].z;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].z;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].z;
+		res.z =getIntrValue(test,hitpoint);
+		if(res.z ==NULL)
+			res.z = (curFnormal[0].z+curFnormal[1].z+curFnormal[2].z)/3;
+		normalize(res);
+		/*
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].x;
+		res.x =getIntrValue(curVertex,hitpoint);
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].y;
+		res.y =getIntrValue(curVertex,hitpoint);
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].z;
+		res.z =getIntrValue(curVertex,hitpoint);*/
+			return res;
+}
+
 __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
 {
 	uchar4 resultColor;
@@ -336,11 +407,16 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 
 		if (Ks > 0.001)
 		{
-			float NdotDir = -dotProduct(normal[index * 3], dir);
+			//yating create lerp
+			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
+			float3 curFNormal[3] ={normal[index*3], normal[index*3+1], normal[index*3+2]} ; 
+			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
+			normalize(lerpNormal);
+			float NdotDir = -dotProduct(lerpNormal, dir);
 			float3 reflectDir;
-			reflectDir.x = normal[index * 3].x * 2 * NdotDir + dir.x;
-			reflectDir.y = normal[index * 3].y * 2 * NdotDir + dir.y;
-			reflectDir.z = normal[index * 3].z * 2 * NdotDir + dir.z;
+			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
+			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
+			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
 			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
 			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);

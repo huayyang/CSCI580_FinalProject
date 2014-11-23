@@ -164,6 +164,7 @@ vector<MtlInfo> readMaterial(char *mtllibname){
 	return mtlList;
 }
 //int main(int argc, char **argv)
+ 
 void ObjInfo::readObj(char *objName)
 {
 	/*
@@ -216,8 +217,8 @@ while(infile.peek()!=-1){
 
 		float3 temp;
 		temp.x=getFloat(token);
-		temp.y=getFloat(token);
 		temp.z=getFloat(token);
+		temp.y=getFloat(token);
 		v.push_back(temp);
       continue;
     }
@@ -227,8 +228,8 @@ while(infile.peek()!=-1){
 	  
 		float3 temp;
 		temp.x=getFloat(token);
-		temp.y=getFloat(token);
 		temp.z=getFloat(token);
+		temp.y=getFloat(token);
 		vn.push_back(temp);
       continue;
     }
