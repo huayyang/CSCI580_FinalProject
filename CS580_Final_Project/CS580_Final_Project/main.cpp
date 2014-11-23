@@ -158,6 +158,7 @@ void initMaterials()
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
 
+
 float3 float3Plusfloat3(float3 a, float3 b)
 {
 	float3 res;
@@ -166,6 +167,7 @@ float3 float3Plusfloat3(float3 a, float3 b)
 	res.z = a.z + b.z;
 	return res;
 }
+
 
 //yating
 int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
@@ -183,6 +185,7 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 
 	for (int i = 0; i<faceSize; i++)
 	{
+
 		vertexBuffer[order] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[0] - 1], offset);
 		normalBuffer[order] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
 		colorBuffer[order] = make_uchar4(r, g, b, a);
@@ -196,6 +199,7 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 		colorBuffer[order + 2] = make_uchar4(r, g, b, a);
 		order += 3;
 
+
 		materialIndexBuffer[faceOrder] = make_uchar1(materialIndex);
 		faceOrder++;
 	}
@@ -205,8 +209,8 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 void readFile()  // currently is premade
 {
 
-
 	totalNum = 22;//10+760;
+
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -232,12 +236,12 @@ void readFile()  // currently is premade
 	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
 	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
 
-	//yating edit
-	ObjInfo objBox;
-	objBox.readObj("box30.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
+	////yating edit
+	//ObjInfo objBox;
+	//objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
-
-	curTotalTriFace += inputModel(objBox, curTotalTriFace, make_float3(15, 15, 15), 0);
+	//
+	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15 ),0);
 
 	for (int i = 0; i<PHOTON_NUM; i++)
 	{

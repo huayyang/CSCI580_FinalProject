@@ -19,6 +19,7 @@ bool rendered;
 struct cudaGraphicsResource* screenBufferPBO_CUDA;
 struct cudaGraphicsResource* photonBufferPBO_CUDA;
 
+//
 //float3 operator+(const float3 &a, const float3 &b) {
 //
 //	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);

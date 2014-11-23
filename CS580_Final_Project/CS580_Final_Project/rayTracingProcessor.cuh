@@ -8,10 +8,10 @@
 #include <stdio.h>
 #include "defines.h"
 
-static __device__ float3 *vertexBuffer_CUDA,*normalBuffer_CUDA;
-static __device__ uchar4 *colorBuffer_CUDA;
-static __device__ Material *materialBuffer_CUDA;
-static __device__ uchar1 *materialIndexBuffer_CUDA;
+static  __device__ float3 *vertexBuffer_CUDA,*normalBuffer_CUDA;
+static  __device__ uchar4 *colorBuffer_CUDA;
+static  __device__ Material *materialBuffer_CUDA;
+static  __device__ uchar1 *materialIndexBuffer_CUDA;
 
 static __device__ Photon *photonBuffer_CUDA;
 static __device__ KDTree::KDTriangle *kdTriangles_CUDA;
