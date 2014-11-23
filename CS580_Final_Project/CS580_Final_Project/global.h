@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "defines.h"
-#include "KDTree.h"
+#include "KDTree.cuh"
 #include "ReadObj.h"
 #pragma comment(lib, "glew32.lib")
 
@@ -25,6 +25,7 @@ extern Material *materialBuffer;
 extern uchar1 *materialIndexBuffer;
 
 extern KDTree::KDTriangle *kdTriangles;
+extern KDTree::KDNode* KDTreeRoot;
 
 extern GLuint photonBufferPBO;
 extern Photon *photonBuffer;
@@ -34,11 +35,12 @@ extern bool rendered;
 extern struct cudaGraphicsResource* screenBufferPBO_CUDA;
 extern struct cudaGraphicsResource* photonBufferPBO_CUDA;
 
-float3 operator+(const float3 &a, const float3 &b);
-float3 operator-(const float3 &a, const float3 &b);
-float3 operator*(const float3 &a, const float3 &b);
-float3 operator*(const float3 &a, const float &b);
-float3 operator/(const float3 &a, const float3 &b);
-bool operator==(const float3 &a, const float3 &b);
+//float3 operator+(const float3 &a, const float3 &b);
+//float3 operator-(const float3 &a, const float3 &b);
+//float3 operator*(const float3 &a, const float3 &b);
+//float3 operator*(const float3 &a, const float &b);
+//float3 operator/(const float3 &a, const float3 &b);
+//bool operator==(const float3 &a, const float3 &b);
+
 #endif
 

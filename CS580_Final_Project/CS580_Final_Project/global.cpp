@@ -8,6 +8,7 @@ Material *materialBuffer;
 uchar1 *materialIndexBuffer;
 
 KDTree::KDTriangle *kdTriangles;
+KDTree::KDNode* KDTreeRoot;
 
 Photon *photonBuffer;
 GLuint photonBufferPBO;
@@ -18,40 +19,39 @@ bool rendered;
 struct cudaGraphicsResource* screenBufferPBO_CUDA;
 struct cudaGraphicsResource* photonBufferPBO_CUDA;
 
-
-/* Operators */
-float3 operator+(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
-
-}
-
-float3 operator-(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
-
-}
-
-float3 operator*(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
-
-}
-
-float3 operator*(const float3 &a, const float &b) {
-
-	return make_float3(a.x * b, a.y * b, a.z * b);
-
-}
-
-bool operator==(const float3 &a, const float3 &b) {
-
-	return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
-
-}
-
-float3 operator/(const float3 &a, const float3 &b) {
-
-	return make_float3(a.x / b.x, a.y / b.y, a.z / b.z);
-
-}
+//
+//float3 operator+(const float3 &a, const float3 &b) {
+//
+//	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
+//
+//}
+//
+//float3 operator-(const float3 &a, const float3 &b) {
+//
+//	return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+//
+//}
+//
+//float3 operator*(const float3 &a, const float3 &b) {
+//
+//	return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
+//
+//}
+//
+//float3 operator*(const float3 &a, const float &b) {
+//
+//	return make_float3(a.x * b, a.y * b, a.z * b);
+//
+//}
+//
+//bool operator==(const float3 &a, const float3 &b) {
+//
+//	return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
+//
+//}
+//
+//float3 operator/(const float3 &a, const float3 &b) {
+//
+//	return make_float3(a.x / b.x, a.y / b.y, a.z / b.z);
+//
+//}
