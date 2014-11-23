@@ -197,7 +197,7 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 void readFile()  // currently is premade
 { 
 
-	totalNum = 10;//+760;
+	totalNum = 10+760;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -223,12 +223,12 @@ void readFile()  // currently is premade
 	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
 	cudaMalloc((void**)&photonBuffer_CUDA, PHOTON_NUM * sizeof(Photon));
 
-	////yating edit
-	//ObjInfo objBox;
-	//objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
+	//yating edit
+	ObjInfo objBox;
+	objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
- //
-	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15 ),0);
+ 
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15),1);
  
 	for(int i = 0;i<PHOTON_NUM;i++)
 	{
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
 {
 	size_t value;
 	cudaDeviceGetLimit(&value, cudaLimitStackSize);
-	cudaDeviceSetLimit(cudaLimitStackSize, value * 2);
+	cudaDeviceSetLimit(cudaLimitStackSize, value * 64);
 
 	glutInit(&argc, argv);  
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);  

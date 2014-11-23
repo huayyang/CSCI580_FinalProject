@@ -327,29 +327,29 @@ __device__ uchar4 getColor(int currentIndex,uchar4 * pixels,int count,float3* ve
 	return resultColor;
 }
 
-__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,unsigned int width,unsigned int height,Camera cam,Photon* photons)
+__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,unsigned int width,unsigned int height,Camera* cam,Photon* photons)
 {
     int i = blockIdx.x + indexX * unitX;
-	int j = blockIdx.y + indexY * unitY;
+	int j = threadIdx.x + indexY * unitY;
 	int offsetX = i - width / 2;
 	int offsetY = height / 2 - j;
 	float3 dir;
-	dir.x = cam.lookat.x + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.x + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.x;
-	dir.y = cam.lookat.y + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.y + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.y;
-	dir.z = cam.lookat.z + (cam.tan_fov_2 * 2 * offsetY / height) * cam.up.z + (cam.tan_fov_2 * 2 * offsetX / height) * cam.right.z;
+	dir.x = cam->lookat.x + (cam->tan_fov_2 * 2 * offsetY / height) * cam->up.x + (cam->tan_fov_2 * 2 * offsetX / height) * cam->right.x;
+	dir.y = cam->lookat.y + (cam->tan_fov_2 * 2 * offsetY / height) * cam->up.y + (cam->tan_fov_2 * 2 * offsetX / height) * cam->right.y;
+	dir.z = cam->lookat.z + (cam->tan_fov_2 * 2 * offsetY / height) * cam->up.z + (cam->tan_fov_2 * 2 * offsetX / height) * cam->right.z;
 	
 	dir = normalize(dir);
 
 	int id = i + j * width;
 	
-	pixels[id] = getColor(-1,pixels,count,vertex,normal,color,materials,materialIndex,cam.pos,dir,photons);
+	pixels[id] = getColor(-1,pixels,count,vertex,normal,color,materials,materialIndex,cam->pos,dir,photons);
 	
 }
 
 __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* photons, float3 lightPos)
 {
     int i = blockIdx.x;
-	int j = blockIdx.y;
+	int j = threadIdx.x;
 	float3 dir;
 
 	if(i >= 10 || j >= 10)
@@ -394,9 +394,10 @@ __global__ void CastPhoton(uchar4 * pixels,int count,float3* vertex,Photon* phot
 // Helper function for using CUDA to add vectors in parallel.
 void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color, Photon* photons, Material* materials, uchar1* materialIndex)
 {
-	dim3 photonBlock(10,10);
+	dim3 photonBlock(10);
+	dim3 photonThread(10);
 	// compute light photons
-	CastPhoton<<<photonBlock,1>>>(pixels,count,vertex,photons,LIGHT_POS);
+	CastPhoton<<<photonBlock,photonThread>>>(pixels,count,vertex,photons,LIGHT_POS);
 	cudaThreadSynchronize();  
 	
 	//Photon* photonBuffer = (Photon*)malloc(100 * sizeof(Photon));
@@ -407,13 +408,15 @@ void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,ucha
 	//	std::cout<<" "<<photonBuffer[i].pos.x<<" "<<photonBuffer[i].pos.y<<" "<<photonBuffer[i].pos.z<<"\t";
 	//}
 
-	Camera cam;
-	cam.pos = CAM_POS;
-	cam.lookat = CAM_LOOKAT;
-	cam.up = CAM_LOOKUP;
-	cam.right = CAM_LOOKRIGHT;
-	cam.fov = CAM_FOV;
-	cam.tan_fov_2 = tan(cam.fov * PI /2 / 180);
+	Camera* cam = (Camera*)malloc(sizeof(Camera));
+	cam->pos = CAM_POS;
+	cam->lookat = CAM_LOOKAT;
+	cam->up = CAM_LOOKUP;
+	cam->right = CAM_LOOKRIGHT;
+	cam->fov = CAM_FOV;
+	cam->tan_fov_2 = tan(cam->fov * PI /2 / 180);
+	cudaMalloc((void**)&mainCamera_CUDA,sizeof(Camera));
+	cudaMemcpy(mainCamera_CUDA,cam,sizeof(Camera),cudaMemcpyHostToDevice);
 
 	int width = SCR_WIDTH;
 	int indexX = 0;
@@ -435,11 +438,12 @@ void rayTracingCuda(uchar4 * pixels,int count,float3* vertex,float3* normal,ucha
 				y = UNIT_Y;
 			else
 				y = height;
-
-			dim3 dimblock(x,y);
+			
+			dim3 dimblock(x);
+			dim3 dimthread(y);
 
 			// Launch a kernel on the GPU with one thread for each element.
-			kernel<<<dimblock,1>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,materials,materialIndex,SCR_WIDTH,SCR_HEIGHT,cam,photons);
+			kernel<<<dimblock,dimthread>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,materials,materialIndex,SCR_WIDTH,SCR_HEIGHT,mainCamera_CUDA,photons);
 
 			cudaThreadSynchronize();  
 
