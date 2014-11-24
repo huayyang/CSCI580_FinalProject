@@ -150,8 +150,9 @@ __device__ float checkDis(float3* vertex, float3 pos, float3 dir)
 
 
 // 
-__device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho)
+__device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho, bool* isFront)
 {
+	*isFront = true;
 	//step1 calculate normal
 	float3 edge1, edge2, normal;
 	edge1.x = vertex[1].x - vertex[0].x;
@@ -170,10 +171,12 @@ __device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho)
 	linkEdge.y = vertex[0].y - pos.y;
 	linkEdge.z = vertex[0].z - pos.z;
 
-	float projectedValue = -dotProduct(linkEdge, normal);
-	projectedVector.x = -projectedValue * normal.x;
-	projectedVector.y = -projectedValue * normal.y;
-	projectedVector.z = -projectedValue * normal.z;
+	float projectedValue = dotProduct(linkEdge, normal);
+	if (projectedValue > 0.001)
+		*isFront = false;
+	projectedVector.x = projectedValue * normal.x;
+	projectedVector.y = projectedValue * normal.y;
+	projectedVector.z = projectedValue * normal.z;
 
 	//step3 calculate the intersected point
 	float3 intersected;
@@ -207,9 +210,9 @@ __device__ float3 getR(float ni, float3 I, float3 N)
 	float cosR = sqrtf(1 - sinR *sinR);
 
 	float3 R;
-	R.x = biNormal.x * sinR + N.x * cosR;
-	R.y = biNormal.y * sinR + N.y * cosR;
-	R.z = biNormal.z * sinR + N.z * cosR;
+	R.x = biNormal.x * sinR - N.x * cosR;
+	R.y = biNormal.y * sinR - N.y * cosR;
+	R.z = biNormal.z * sinR - N.z * cosR;
 
 	return R;
 }
@@ -223,9 +226,9 @@ __device__ float3 getI(float ni,float3 R,float3 N)
 	float cosI = sqrtf(1 - sinI *sinI);
 
 	float3 I;
-	I.x = biNormal.x * sinI + N.x * cosI;
-	I.y = biNormal.y * sinI + N.y * cosI;
-	I.z = biNormal.z * sinI + N.z * cosI;
+	I.x = -biNormal.x * sinI + N.x * cosI;
+	I.y = -biNormal.y * sinI + N.y * cosI;
+	I.z = -biNormal.z * sinI + N.z * cosI;
 }
 
 __device__ void swapValue(float &a, float &b){
@@ -269,13 +272,21 @@ __device__ void splitSort(float *A, int n, int low, int high)
 	splitSort(A, n, left + 1, high);
 }
 
-__device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
+__device__ uchar4 getColor(int depth,int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
 {
 	uchar4 resultColor;
+
+	resultColor.x = 0;
+	resultColor.y = 0;
+	resultColor.z = 0;
+
+	if (depth > 10)
+		return resultColor;
 
 	float minDis = MAX_DIS;
 	int index = -1;
 	float3 hitpoint;
+	bool isFront = true;
 
 	for (int k = 0; k<count; k++)
 	{
@@ -283,18 +294,16 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 			continue;
 
 		float3 hitPos;
-		float distance = hitSurface(vertex + k * 3, pos, dir, &hitPos);
+		bool isCurrentFront = true;
+		float distance = hitSurface(vertex + k * 3, pos, dir, &hitPos,&isCurrentFront);
 		if (distance < minDis && distance > 0.001)
 		{
+			isFront = isCurrentFront;
 			minDis = distance;
 			index = k;
 			hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
 		}
 	}
-
-	resultColor.x = 0;
-	resultColor.y = 0;
-	resultColor.z = 0;
 
 	if (index != -1)
 	{
@@ -303,7 +312,7 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
 		float Kni = hitMat.Kni;
-		if (Kd > 0.001)
+		if (Kd > 0.001 && isFront)
 		{
 			int radius = 50;
 			float distances[100] = { 0 };
@@ -334,7 +343,7 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 		// sort and get the middle distance
 		//splitSort(distances,100,0,99);
 
-		if (Ks > 0.001)
+		if (Ks > 0.001 && isFront)
 		{
 			float NdotDir = -dotProduct(normal[index * 3], dir);
 			float3 reflectDir;
@@ -345,7 +354,7 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
-			uchar4 speculateColor = getColor(index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
+			uchar4 speculateColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
 			
 			int3 colorInt;
 			colorInt.x = resultColor.x + Ks * speculateColor.x;
@@ -360,21 +369,31 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 		if (Kni > 0.001)
 		{
 			float Ni = hitMat.Ni;
-			float NdotDir = -dotProduct(normal[index * 3], dir);
-			float3 reflectDir;
-			reflectDir.x = normal[index * 3].x * 2 * NdotDir + dir.x;
-			reflectDir.y = normal[index * 3].y * 2 * NdotDir + dir.y;
-			reflectDir.z = normal[index * 3].z * 2 * NdotDir + dir.z;
+			float3 outDir;
+			float3 n;
+			n.x = -normal[index * 3].x;
+			n.y = -normal[index * 3].y;
+			n.z = -normal[index * 3].z;
+			if (isFront)
+			{
+				outDir = getR(Ni,dir,normal[index * 3]);
+				//printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
+			}
+			else
+			{
+				outDir = getR(1/Ni,dir,n);
+				printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
+			}
 			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
 			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
-			uchar4 refractColor = getColor(index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
+			uchar4 refractColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, outDir, photons);
 			
 			int3 colorInt;
-			colorInt.x = resultColor.x + Ks * refractColor.x;
-			colorInt.y = resultColor.y + Ks * refractColor.y;
-			colorInt.z = resultColor.z + Ks * refractColor.z;
+			colorInt.x = resultColor.x + Kni * refractColor.x;
+			colorInt.y = resultColor.y + Kni * refractColor.y;
+			colorInt.z = resultColor.z + Kni * refractColor.z;
 			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
 			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
@@ -384,7 +403,6 @@ __device__ uchar4 getColor(int currentIndex, uchar4 * pixels, int count, float3*
 
 	return resultColor;
 }
-
 
 __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,unsigned int width,unsigned int height,Camera* cam,Photon* photons)
 {
@@ -401,7 +419,7 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 
 	int id = i + j * width;
 	
-	pixels[id] = getColor(-1,pixels,count,vertex,normal,color,materials,materialIndex,cam->pos,dir,photons);
+	pixels[id] = getColor(0,-1,pixels,count,vertex,normal,color,materials,materialIndex,cam->pos,dir,photons);
 	
 }
 
@@ -414,19 +432,21 @@ __global__ void CastPhoton(uchar4 * pixels, int count, float3* vertex, Photon* p
 	if (i >= 10 || j >= 10)
 		return;
 
-
 	dir.x = photons[i * 10 + j].pos.x;
 	dir.y = photons[i * 10 + j].pos.y;
 	dir.z = -10;
 	photons[i * 10 + j].pos.x = photons[i * 10 + j].pos.y = photons[i * 10 + j].pos.z = -100;
 	dir = normalize(dir);
 
+
+
 	float minDis = MAX_DIS;
 	int index = -1;
+	bool isFront = true;
 	for (int k = 0; k<count; k++)
 	{
 		float3 temp;
-		float distance = hitSurface(vertex + k * 3, lightPos, dir, &temp);
+		float distance = hitSurface(vertex + k * 3, lightPos, dir, &temp,&isFront);
 		if (distance < minDis)
 		{
 			minDis = distance;

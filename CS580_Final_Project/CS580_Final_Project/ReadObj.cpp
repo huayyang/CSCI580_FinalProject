@@ -227,8 +227,8 @@ while(infile.peek()!=-1){
 	  
 		float3 temp;
 		temp.x=getFloat(token);
-		temp.y=getFloat(token);
 		temp.z=getFloat(token);
+		temp.y=getFloat(token);
 		vn.push_back(temp);
       continue;
     }

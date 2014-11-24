@@ -19,12 +19,12 @@ int initCornellBox()
 	vertexBuffer[5] = make_float3(100, 0, 100);
 
 	vertexBuffer[6] = make_float3(0, 0, 0);
-	vertexBuffer[7] = make_float3(0, 100, 100);
-	vertexBuffer[8] = make_float3(0, 100, 0);
+	vertexBuffer[7] = make_float3(0, 100, 0);
+	vertexBuffer[8] = make_float3(0, 100, 100);
 
 	vertexBuffer[9] = make_float3(0, 0, 0);
-	vertexBuffer[10] = make_float3(0, 0, 100);
-	vertexBuffer[11] = make_float3(0, 100, 100);
+	vertexBuffer[10] = make_float3(0, 100, 100);
+	vertexBuffer[11] = make_float3(0, 0, 100);
 
 	vertexBuffer[12] = make_float3(0, 0, 0);
 	vertexBuffer[13] = make_float3(100, 0, 0);
@@ -43,12 +43,12 @@ int initCornellBox()
 	vertexBuffer[23] = make_float3(100, 100, 100);
 
 	vertexBuffer[24] = make_float3(0, 0, 100);
-	vertexBuffer[25] = make_float3(100, 0, 100);
-	vertexBuffer[26] = make_float3(100, 100, 100);
+	vertexBuffer[25] = make_float3(100, 100, 100);
+	vertexBuffer[26] = make_float3(100, 0, 100);
 
 	vertexBuffer[27] = make_float3(0, 0, 100);
-	vertexBuffer[28] = make_float3(100, 100, 100);
-	vertexBuffer[29] = make_float3(0, 100, 100);
+	vertexBuffer[28] = make_float3(0, 100, 100);
+	vertexBuffer[29] = make_float3(100, 100, 100);
 
 	normalBuffer[0] = make_float3(0, 1, 0);
 	normalBuffer[1] = make_float3(0, 1, 0);
@@ -142,7 +142,7 @@ int initCornellBox()
 
 void initMaterials()
 {
-	int materialNum = 2;
+	int materialNum = 3;
 	materialBuffer = (Material*)malloc(materialNum * sizeof(Material));
 	memset(materialBuffer, 0, materialNum * sizeof(Material));
 	cudaMalloc((void**)&materialBuffer_CUDA, materialNum * sizeof(Material));
@@ -152,10 +152,15 @@ void initMaterials()
 	materialBuffer[0].Kni = 0.0f;
 	materialBuffer[0].Ni = 1.0f;
 
-	materialBuffer[1].Kd = 1.0f;
-	materialBuffer[1].Ks = 0.2f;
-	materialBuffer[0].Kni = 0.0f;
-	materialBuffer[1].Ni = 1.0f;
+	materialBuffer[1].Kd = 0.2f;
+	materialBuffer[1].Ks = 1.0f;
+	materialBuffer[1].Kni = 0.0f;
+	materialBuffer[1].Ni = 1.00f;
+
+	materialBuffer[2].Kd = 0.0f;
+	materialBuffer[2].Ks = 0.0f;
+	materialBuffer[2].Kni = 1.0f;
+	materialBuffer[2].Ni = 1.33f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
@@ -242,7 +247,7 @@ void readFile()  // currently is premade
 	ObjInfo objBox;
 	objBox.readObj("box30.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
-	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(15,15,15 ),1);
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,30,30 ),2);
 
 	for(int i =0;i<10;i++)
 	{

@@ -24,6 +24,6 @@ __device__ float dotProduct(float3 a, float3 b);
 __device__ float3 crossProduct(float3 a, float3 b);
 __device__ bool isInside(float3 point, float3* triangle);
 __device__ float3 normalize(float3 vector);
-__device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho);
+__device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho,bool* isFront);
 
 #endif
