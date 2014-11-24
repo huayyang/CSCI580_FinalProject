@@ -11,7 +11,7 @@ static int UNIT_Y = 128;
 
 static int SCR_WIDTH = 1024;
 static int SCR_HEIGHT = 1024;
-static float3 CAM_POS = make_float3(50,100,50);
+static float3 CAM_POS = make_float3(10,100,50);
 static float3 CAM_LOOKAT = make_float3(0,-1,0);
 static float3 CAM_LOOKUP = make_float3(0,0,1);
 static float3 CAM_LOOKRIGHT = make_float3(1,0,0);

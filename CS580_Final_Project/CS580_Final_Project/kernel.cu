@@ -201,20 +201,21 @@ __device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho,
 		return MAX_DIS;
 }
 
-__device__ float3 getR(float ni, float3 I, float3 N)
+__device__ bool getR(float3* outdir, float ni, float3 I, float3 N)
 {
 	float3 planeNormal = crossProduct(N,I);
 	float3 biNormal = crossProduct(planeNormal,N);
 	float sinI = dotProduct(biNormal,I);
 	float sinR = sinI / ni;
+	if (sinR >= 0.9999)
+		return false;
 	float cosR = sqrtf(1 - sinR *sinR);
 
-	float3 R;
-	R.x = biNormal.x * sinR - N.x * cosR;
-	R.y = biNormal.y * sinR - N.y * cosR;
-	R.z = biNormal.z * sinR - N.z * cosR;
+	outdir->x = biNormal.x * sinR - N.x * cosR;
+	outdir->y = biNormal.y * sinR - N.y * cosR;
+	outdir->z = biNormal.z * sinR - N.z * cosR;
 
-	return R;
+	return true;
 }
 
 __device__ float3 getI(float ni,float3 R,float3 N)
@@ -272,7 +273,78 @@ __device__ void splitSort(float *A, int n, int low, int high)
 	splitSort(A, n, left + 1, high);
 }
 
-__device__ uchar4 getColor(int depth,int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
+//yating add lerp
+__device__ float getIntrValue(float3 *curVertex, float3 hitpoint)
+{
+	float res;
+	float3 edge01,edge02;
+	edge01.x = curVertex[1].x-curVertex[0].x;
+	edge01.y = curVertex[1].y-curVertex[0].y;  
+	edge01.z = curVertex[1].z-curVertex[0].z; 
+
+	edge02.x = curVertex[2].x-curVertex[0].x;
+	edge02.y = curVertex[2].y-curVertex[0].y;  
+	edge02.z = curVertex[2].z-curVertex[0].z; 
+
+	float3 cross = crossProduct(edge02,edge01);
+
+	//fumula  ax + by + cz = d
+	float d = (cross.x*curVertex[1].x  + cross.y*curVertex[1].y + cross.z*curVertex[1].z );
+
+	//calculate z value  z =( d-ax -by )/c
+	if(cross.z >10e-6 || cross.z <-10e-6){
+		res = ( d - (cross.x* hitpoint.x) - (cross.y*hitpoint.y)) / cross.z; 
+		 
+	}
+	else return NULL;
+	                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+//
+//	printf("%d %f %f %f \n",faceIndex,curVertex[2].x,curVertex[2].y,curVertex[2].z);
+	return res;
+}
+__device__ float3  lerp(int faceIndex, float3 *curVertex,float3 *curFnormal,float3 hitpoint)
+{
+		//IsInside(hitpoint, curVertex);
+ //printf("%d %f %f %f \n",faceIndex,curFnormal[2].x,curFnormal[2].y,curFnormal[2].z);
+		float3 res;
+
+		float3 test[3];
+
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].x;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].x;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].x;
+		res.x =getIntrValue(test,hitpoint);
+		if(res.x ==NULL)
+			res.x = (curFnormal[0].x+ curFnormal[1].x+ curFnormal[2].x)/3;
+
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].y;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].y;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].y;
+		res.y =getIntrValue(test,hitpoint);
+				if(res.y ==NULL)
+			res.y = (curFnormal[0].y +curFnormal[1].y+curFnormal[2].y)/3;
+		test[0].x = curVertex[0].x;		test[0].y = curVertex[0].y; 		test[0].z = curFnormal[0].z;
+		test[1].x = curVertex[1].x;		test[1].y = curVertex[1].y; 		test[1].z = curFnormal[1].z;
+		test[2].x = curVertex[2].x;		test[2].y = curVertex[2].y; 		test[2].z = curFnormal[2].z;
+		res.z =getIntrValue(test,hitpoint);
+		if(res.z ==NULL)
+			res.z = (curFnormal[0].z+curFnormal[1].z+curFnormal[2].z)/3;
+		normalize(res);
+		/*
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].x;
+		res.x =getIntrValue(curVertex,hitpoint);
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].y;
+		res.y =getIntrValue(curVertex,hitpoint);
+		for(int i=0; i<3;i++)
+			curVertex[i].z = curFnormal[i].z;
+		res.z =getIntrValue(curVertex,hitpoint);*/
+			return res;
+}
+
+__device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
 {
 	uchar4 resultColor;
 
@@ -342,14 +414,69 @@ __device__ uchar4 getColor(int depth,int currentIndex, uchar4 * pixels, int coun
 
 		// sort and get the middle distance
 		//splitSort(distances,100,0,99);
+		float tF = 0;
 
-		if (Ks > 0.001 && isFront)
+		if (Kni > 0.001)
 		{
-			float NdotDir = -dotProduct(normal[index * 3], dir);
+			float Ni = hitMat.Ni;
+
+			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
+			float3 curFNormal[3] ={normal[index*3], normal[index*3+1], normal[index*3+2]} ; 
+			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
+			lerpNormal = normalize(lerpNormal);
+
+			float3 outDir;
+			float3 n;
+			if (isFront)
+			{
+				n.x = lerpNormal.x;
+				n.y = lerpNormal.y;
+				n.z = lerpNormal.z;
+			}
+			else
+			{
+				n.x = -lerpNormal.x;
+				n.y = -lerpNormal.y;
+				n.z = -lerpNormal.z;
+				Ni = 1/Ni;
+			}
+
+			if (!getR(&outDir,Ni,dir,n))
+			{
+				tF = Kni;
+			}
+			else
+			{
+				//printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
+				//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
+				//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
+				//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
+
+				uchar4 refractColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, outDir, photons);
+			
+				int3 colorInt;
+				colorInt.x = resultColor.x + Kni * refractColor.x;
+				colorInt.y = resultColor.y + Kni * refractColor.y;
+				colorInt.z = resultColor.z + Kni * refractColor.z;
+				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
+				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+			}
+
+		}
+
+		if ( (Ks + tF) > 0.001)
+		{
+			//yating create lerp
+			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
+			float3 curFNormal[3] ={normal[index*3], normal[index*3+1], normal[index*3+2]} ; 
+			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
+			lerpNormal = normalize(lerpNormal);
+			float NdotDir = -dotProduct(lerpNormal, dir);
 			float3 reflectDir;
-			reflectDir.x = normal[index * 3].x * 2 * NdotDir + dir.x;
-			reflectDir.y = normal[index * 3].y * 2 * NdotDir + dir.y;
-			reflectDir.z = normal[index * 3].z * 2 * NdotDir + dir.z;
+			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
+			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
+			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
 			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
 			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
 			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
@@ -357,48 +484,15 @@ __device__ uchar4 getColor(int depth,int currentIndex, uchar4 * pixels, int coun
 			uchar4 speculateColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
 			
 			int3 colorInt;
-			colorInt.x = resultColor.x + Ks * speculateColor.x;
-			colorInt.y = resultColor.y + Ks * speculateColor.y;
-			colorInt.z = resultColor.z + Ks * speculateColor.z;
+			colorInt.x = resultColor.x + (Ks + tF) * speculateColor.x;
+			colorInt.y = resultColor.y + (Ks + tF) * speculateColor.y;
+			colorInt.z = resultColor.z + (Ks + tF) * speculateColor.z;
 			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
 			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
 
 		}
 
-		if (Kni > 0.001)
-		{
-			float Ni = hitMat.Ni;
-			float3 outDir;
-			float3 n;
-			n.x = -normal[index * 3].x;
-			n.y = -normal[index * 3].y;
-			n.z = -normal[index * 3].z;
-			if (isFront)
-			{
-				outDir = getR(Ni,dir,normal[index * 3]);
-				//printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
-			}
-			else
-			{
-				outDir = getR(1/Ni,dir,n);
-				printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
-			}
-			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
-			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
-			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
-
-			uchar4 refractColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, outDir, photons);
-			
-			int3 colorInt;
-			colorInt.x = resultColor.x + Kni * refractColor.x;
-			colorInt.y = resultColor.y + Kni * refractColor.y;
-			colorInt.z = resultColor.z + Kni * refractColor.z;
-			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
-			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
-			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
-
-		}
 	}
 
 	return resultColor;

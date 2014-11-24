@@ -217,7 +217,7 @@ void readFile()  // currently is premade
 {
 
 
-	totalNum = 22;//10+760;
+	totalNum = 10+760;
 	size_t size = totalNum * 3;
 	vertexBuffer = (float3*)malloc(size * sizeof(float3));
 	memset(vertexBuffer, 0, size * sizeof(float3));
@@ -245,7 +245,7 @@ void readFile()  // currently is premade
 
 	//yating edit
 	ObjInfo objBox;
-	objBox.readObj("box30.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
+	objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
 	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,30,30 ),2);
 
