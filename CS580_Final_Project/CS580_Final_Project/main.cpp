@@ -160,7 +160,7 @@ void initMaterials()
 	materialBuffer[2].Kd = 0.0f;
 	materialBuffer[2].Ks = 0.0f;
 	materialBuffer[2].Kni = 1.0f;
-	materialBuffer[2].Ni = 1.33f;
+	materialBuffer[2].Ni = 1.5f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
@@ -193,12 +193,12 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 	for (int i = 0; i<faceSize; i++)
 	{
 
-		vertexBuffer[order] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[0] - 1], offset);
-		normalBuffer[order] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
+		vertexBuffer[order] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[1] - 1], offset);
+		normalBuffer[order] = obj.vn[(obj.f[i].normalIndex[1]) - 1];
 		colorBuffer[order] = make_uchar4(r, g, b, a);
 
-		vertexBuffer[order + 1] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[1] - 1], offset);
-		normalBuffer[order + 1] = obj.vn[(obj.f[i].normalIndex[1]) - 1];
+		vertexBuffer[order + 1] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[0] - 1], offset);
+		normalBuffer[order + 1] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
 		colorBuffer[order + 1] = make_uchar4(r, g, b, a);
 
 		vertexBuffer[order + 2] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[2] - 1], offset);
@@ -247,7 +247,7 @@ void readFile()  // currently is premade
 	ObjInfo objBox;
 	objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"
 	int curTotalTriFace = initCornellBox();
-	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,30,30 ),2);
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,50,30 ),2);
 
 	for(int i =0;i<10;i++)
 	{

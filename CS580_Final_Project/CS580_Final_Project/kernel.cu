@@ -203,9 +203,23 @@ __device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho,
 
 __device__ bool getR(float3* outdir, float ni, float3 I, float3 N)
 {
+	if(dotProduct(I,N)> -0.001)
+	{
+		outdir->x = I.x;
+		outdir->y = I.y;
+		outdir->z = I.z;
+
+		return true;
+	}
+
 	float3 planeNormal = crossProduct(N,I);
-	float3 biNormal = crossProduct(planeNormal,N);
-	float sinI = dotProduct(biNormal,I);
+	float3 tempN = N;
+	float xxx = dotProduct(I, N);
+	tempN.x = I.x - xxx * N.x;
+	tempN.y = I.y - xxx * N.y;
+	tempN.z = I.z - xxx * N.z;
+	float3 biNormal = normalize(tempN);
+	float sinI = dotProduct(biNormal,normalize(I));
 	float sinR = sinI / ni;
 	if (sinR >= 0.9999)
 		return false;
@@ -215,6 +229,9 @@ __device__ bool getR(float3* outdir, float ni, float3 I, float3 N)
 	outdir->y = biNormal.y * sinR - N.y * cosR;
 	outdir->z = biNormal.z * sinR - N.z * cosR;
 
+	//float tmp = dotProduct(N,crossProduct(I,*outdir));
+	//if (tmp < -0.001 || tmp > 0.001)
+	//	printf("%f ..%f... %f,%f,%f......%f,%f,%f......%f,%f,%f\n",ni,tmp,N.x,N.y,N.z,I.x,I.y,I.z,outdir->x,outdir->y,outdir->z);
 	return true;
 }
 
@@ -352,8 +369,11 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	resultColor.y = 0;
 	resultColor.z = 0;
 
-	if (depth > 10)
-		return resultColor;
+	if (depth > 20)
+	{
+		printf("aaa!\n");
+		return make_uchar4(255,255,255,255);
+	}
 
 	float minDis = MAX_DIS;
 	int index = -1;
@@ -418,6 +438,18 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 
 		if (Kni > 0.001)
 		{
+			float3 edge1, edge2, realN;
+			edge1.x = vertex[index * 3 + 1].x - vertex[index * 3].x;
+			edge1.y = vertex[index * 3 + 1].y - vertex[index * 3].y;
+			edge1.z = vertex[index * 3 + 1].z - vertex[index * 3].z;
+
+			edge2.x = vertex[index * 3 + 2].x - vertex[index * 3 + 1].x;
+			edge2.y = vertex[index * 3 + 2].y - vertex[index * 3 + 1].y;
+			edge2.z = vertex[index * 3 + 2].z - vertex[index * 3 + 1].z;
+
+			realN = normalize(crossProduct(edge1, edge2));
+
+
 			float Ni = hitMat.Ni;
 
 			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
@@ -447,10 +479,6 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			}
 			else
 			{
-				//printf("%d %f %f %f\t\t %f %f %f \t\t %f %f %f\n",depth,dir.x,dir.y,dir.z,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z,outDir.x,outDir.y,outDir.z);
-				//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
-				//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
-				//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
 				uchar4 refractColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, outDir, photons);
 			
