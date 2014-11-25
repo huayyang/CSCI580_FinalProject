@@ -32,14 +32,12 @@ int getFaceInt(const char *&token)
 
 	return res;
 }
-char* getString(const char *&token)
+const char* getString(const char *&token)
 {
- 
+
 		token += strspn(token, " \t");
 		int n = strcspn(token, " \t\r");
-		char *str1 = new char[n+1];
-		memset(str1,0,sizeof(str1));
-		strncpy(str1,token,n);
+		const char *str1 = token;
 		token+=n;
 		return str1;
 }
@@ -285,15 +283,18 @@ while(infile.peek()!=-1){
 		token+=2;
 		FaceInfo tempf;
 		
-		char *a = getString(token);
-		char *b = getString(token);
-		char *c = getString(token);
+		const char *a = getString(token);
+		const	 char *b = getString(token);
+		const char *c = getString(token);
+		
 		const char *strlist[3] = {a,b,c}; 
 		for(int c=0;c<3;c++)
 		{
 			tempf.vertexIndex[c] = getFaceInt(strlist[c]);
 			tempf.uvIndex[c] = getFaceInt(strlist[c]);
 			tempf.normalIndex[c] = getFaceInt(strlist[c]);	
+			if(tempf.normalIndex[c]>10000)
+				cout<<tempf.normalIndex[c]<<endl;
 		}
 		tempf.usemtl = glousemtl;
 		f.push_back(tempf);
