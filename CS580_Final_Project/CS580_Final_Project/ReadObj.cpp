@@ -18,25 +18,26 @@ float getFloat(const char *&token)
 int getFaceInt(const char *&token)
 {
 	int res;
-							   		if(token[0]=='/' && token[1]=='/')
-				{	token++;
-					return NULL;
-			}
+		if(token[0]=='/' && token[1]=='/')
+		{	
+			token++;
+				return NULL;
+		}
 		token += strspn(token, " /");
 
-	   res= (int)atof( token);
+	   res= (  int)atoi( token);
 	    token += strcspn(token, " /\r");
 
 
 
-		return res;
+	return res;
 }
 char* getString(const char *&token)
 {
  
 		token += strspn(token, " \t");
 		int n = strcspn(token, " \t\r");
-		char *str1 = new char[n];
+		char *str1 = new char[n+1];
 		memset(str1,0,sizeof(str1));
 		strncpy(str1,token,n);
 		token+=n;
@@ -283,8 +284,11 @@ while(infile.peek()!=-1){
 	
 		token+=2;
 		FaceInfo tempf;
-		const char *strlist[3] = {getString(token),getString(token),getString(token)};
-		//const char *test="1";//strlist[0];
+		
+		char *a = getString(token);
+		char *b = getString(token);
+		char *c = getString(token);
+		const char *strlist[3] = {a,b,c}; 
 		for(int c=0;c<3;c++)
 		{
 			tempf.vertexIndex[c] = getFaceInt(strlist[c]);
