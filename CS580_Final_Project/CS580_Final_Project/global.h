@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "defines.h"
-#include "KDTree.cuh"
 #include "ReadObj.h"
+#include "rayTracingProcessor.cuh"
 #pragma comment(lib, "glew32.lib")
 
 #include <gl\glew.h>
@@ -19,13 +19,11 @@
 
 extern GLuint screenBufferPBO;
 extern GLuint screenTexture2D;
-extern float3 *vertexBuffer, *normalBuffer;
-extern uchar4 *colorBuffer;
+extern Object *objects;
 extern Material *materialBuffer;
-extern uchar1 *materialIndexBuffer;
 
-extern KDTree::KDTriangle *kdTriangles;
-extern KDTree::KDNode* KDTreeRoot;
+extern int kd_size;
+extern KDTriangle *kdTriangles;
 
 extern GLuint photonBufferPBO;
 extern Photon *photonBuffer;

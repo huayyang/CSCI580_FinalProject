@@ -293,8 +293,6 @@ while(infile.peek()!=-1){
 			tempf.vertexIndex[c] = getFaceInt(strlist[c]);
 			tempf.uvIndex[c] = getFaceInt(strlist[c]);
 			tempf.normalIndex[c] = getFaceInt(strlist[c]);	
-			if(tempf.normalIndex[c]>10000)
-				cout<<tempf.normalIndex[c]<<endl;
 		}
 		tempf.usemtl = glousemtl;
 		f.push_back(tempf);

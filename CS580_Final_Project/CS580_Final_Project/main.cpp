@@ -4,137 +4,136 @@
 #include <iostream>
 
 using namespace std;
-using namespace KDTree;
 #define PHOTON_NUM 100
 
 int initCornellBox()
 {
 	//temp
-	vertexBuffer[0] = make_float3(0, 0, 0);
-	vertexBuffer[1] = make_float3(100, 0, 100);
-	vertexBuffer[2] = make_float3(100, 0, 0);
+	objects[0].vertex[0] = make_float3(0, 0, 0);
+	objects[0].vertex[1] = make_float3(100, 0, 100);
+	objects[0].vertex[2] = make_float3(100, 0, 0);
 
-	vertexBuffer[3] = make_float3(0, 0, 0);
-	vertexBuffer[4] = make_float3(0, 0, 100);
-	vertexBuffer[5] = make_float3(100, 0, 100);
+	objects[1].vertex[0] = make_float3(0, 0, 0);
+	objects[1].vertex[1] = make_float3(0, 0, 100);
+	objects[1].vertex[2] = make_float3(100, 0, 100);
 
-	vertexBuffer[6] = make_float3(0, 0, 0);
-	vertexBuffer[7] = make_float3(0, 100, 0);
-	vertexBuffer[8] = make_float3(0, 100, 100);
+	objects[2].vertex[0] = make_float3(0, 0, 0);
+	objects[2].vertex[1] = make_float3(0, 100, 0);
+	objects[2].vertex[2] = make_float3(0, 100, 100);
 
-	vertexBuffer[9] = make_float3(0, 0, 0);
-	vertexBuffer[10] = make_float3(0, 100, 100);
-	vertexBuffer[11] = make_float3(0, 0, 100);
+	objects[3].vertex[0] = make_float3(0, 0, 0);
+	objects[3].vertex[1] = make_float3(0, 100, 100);
+	objects[3].vertex[2] = make_float3(0, 0, 100);
 
-	vertexBuffer[12] = make_float3(0, 0, 0);
-	vertexBuffer[13] = make_float3(100, 0, 0);
-	vertexBuffer[14] = make_float3(100, 100, 0);
+	objects[4].vertex[0] = make_float3(0, 0, 0);
+	objects[4].vertex[1] = make_float3(100, 0, 0);
+	objects[4].vertex[2] = make_float3(100, 100, 0);
 
-	vertexBuffer[15] = make_float3(0, 0, 0);
-	vertexBuffer[16] = make_float3(100, 100, 0);
-	vertexBuffer[17] = make_float3(0, 100, 0);
+	objects[5].vertex[0] = make_float3(0, 0, 0);
+	objects[5].vertex[1] = make_float3(100, 100, 0);
+	objects[5].vertex[2] = make_float3(0, 100, 0);
 
-	vertexBuffer[18] = make_float3(100, 0, 0);
-	vertexBuffer[19] = make_float3(100, 100, 100);
-	vertexBuffer[20] = make_float3(100, 100, 0);
+	objects[6].vertex[0] = make_float3(100, 0, 0);
+	objects[6].vertex[1] = make_float3(100, 100, 100);
+	objects[6].vertex[2] = make_float3(100, 100, 0);
 
-	vertexBuffer[21] = make_float3(100, 0, 0);
-	vertexBuffer[22] = make_float3(100, 0, 100);
-	vertexBuffer[23] = make_float3(100, 100, 100);
+	objects[7].vertex[0] = make_float3(100, 0, 0);
+	objects[7].vertex[1] = make_float3(100, 0, 100);
+	objects[7].vertex[2] = make_float3(100, 100, 100);
 
-	vertexBuffer[24] = make_float3(0, 0, 100);
-	vertexBuffer[25] = make_float3(100, 100, 100);
-	vertexBuffer[26] = make_float3(100, 0, 100);
+	objects[8].vertex[0] = make_float3(0, 0, 100);
+	objects[8].vertex[1] = make_float3(100, 100, 100);
+	objects[8].vertex[2] = make_float3(100, 0, 100);
 
-	vertexBuffer[27] = make_float3(0, 0, 100);
-	vertexBuffer[28] = make_float3(0, 100, 100);
-	vertexBuffer[29] = make_float3(100, 100, 100);
+	objects[9].vertex[0] = make_float3(0, 0, 100);
+	objects[9].vertex[1] = make_float3(0, 100, 100);
+	objects[9].vertex[2] = make_float3(100, 100, 100);
 
-	normalBuffer[0] = make_float3(0, 1, 0);
-	normalBuffer[1] = make_float3(0, 1, 0);
-	normalBuffer[2] = make_float3(0, 1, 0);
-	normalBuffer[3] = make_float3(0, 1, 0);
-	normalBuffer[4] = make_float3(0, 1, 0);
-	normalBuffer[5] = make_float3(0, 1, 0);
+	objects[0].normal[0] = make_float3(0, 1, 0);
+	objects[0].normal[1] = make_float3(0, 1, 0);
+	objects[0].normal[2] = make_float3(0, 1, 0);
+	objects[1].normal[0] = make_float3(0, 1, 0);
+	objects[1].normal[1] = make_float3(0, 1, 0);
+	objects[1].normal[2] = make_float3(0, 1, 0);
 
-	normalBuffer[6] = make_float3(1, 0, 0);
-	normalBuffer[7] = make_float3(1, 0, 0);
-	normalBuffer[8] = make_float3(1, 0, 0);
-	normalBuffer[9] = make_float3(1, 0, 0);
-	normalBuffer[10] = make_float3(1, 0, 0);
-	normalBuffer[11] = make_float3(1, 0, 0);
+	objects[2].normal[0] = make_float3(1, 0, 0);
+	objects[2].normal[1] = make_float3(1, 0, 0);
+	objects[2].normal[2] = make_float3(1, 0, 0);
+	objects[3].normal[0] = make_float3(1, 0, 0);
+	objects[3].normal[1] = make_float3(1, 0, 0);
+	objects[3].normal[2] = make_float3(1, 0, 0);
 
-	normalBuffer[12] = make_float3(0, 0, 1);
-	normalBuffer[13] = make_float3(0, 0, 1);
-	normalBuffer[14] = make_float3(0, 0, 1);
-	normalBuffer[15] = make_float3(0, 0, 1);
-	normalBuffer[16] = make_float3(0, 0, 1);
-	normalBuffer[17] = make_float3(0, 0, 1);
+	objects[4].normal[0] = make_float3(0, 0, 1);
+	objects[4].normal[1] = make_float3(0, 0, 1);
+	objects[4].normal[2] = make_float3(0, 0, 1);
+	objects[5].normal[0] = make_float3(0, 0, 1);
+	objects[5].normal[1] = make_float3(0, 0, 1);
+	objects[5].normal[2] = make_float3(0, 0, 1);
 
-	normalBuffer[18] = make_float3(-1, 0, 0);
-	normalBuffer[19] = make_float3(-1, 0, 0);
-	normalBuffer[20] = make_float3(-1, 0, 0);
-	normalBuffer[21] = make_float3(-1, 0, 0);
-	normalBuffer[22] = make_float3(-1, 0, 0);
-	normalBuffer[23] = make_float3(-1, 0, 0);
+	objects[6].normal[0] = make_float3(-1, 0, 0);
+	objects[6].normal[1] = make_float3(-1, 0, 0);
+	objects[6].normal[2] = make_float3(-1, 0, 0);
+	objects[7].normal[0] = make_float3(-1, 0, 0);
+	objects[7].normal[1] = make_float3(-1, 0, 0);
+	objects[7].normal[2] = make_float3(-1, 0, 0);
 
-	normalBuffer[24] = make_float3(0, 0, -1);
-	normalBuffer[25] = make_float3(0, 0, -1);
-	normalBuffer[26] = make_float3(0, 0, -1);
-	normalBuffer[27] = make_float3(0, 0, -1);
-	normalBuffer[28] = make_float3(0, 0, -1);
-	normalBuffer[29] = make_float3(0, 0, -1);
+	objects[8].normal[0] = make_float3(0, 0, -1);
+	objects[8].normal[1] = make_float3(0, 0, -1);
+	objects[8].normal[2] = make_float3(0, 0, -1);
+	objects[9].normal[0] = make_float3(0, 0, -1);
+	objects[9].normal[1] = make_float3(0, 0, -1);
+	objects[9].normal[2] = make_float3(0, 0, -1);
 
 	unsigned char r = (255) & 0xff;
 	unsigned char g = (255) & 0xff;
 	unsigned char b = (255) & 0xff;
 	unsigned char a = (255) & 0xff;
-	colorBuffer[0] = make_uchar4(r, g, b, a);
-	colorBuffer[1] = make_uchar4(r, g, b, a);
-	colorBuffer[2] = make_uchar4(r, g, b, a);
-	colorBuffer[3] = make_uchar4(r, g, b, a);
-	colorBuffer[4] = make_uchar4(r, g, b, a);
-	colorBuffer[5] = make_uchar4(r, g, b, a);
+	objects[0].color[0] = make_uchar4(r, g, b, a);
+	objects[0].color[1] = make_uchar4(r, g, b, a);
+	objects[0].color[2] = make_uchar4(r, g, b, a);
+	objects[1].color[0] = make_uchar4(r, g, b, a);
+	objects[1].color[1] = make_uchar4(r, g, b, a);
+	objects[1].color[2] = make_uchar4(r, g, b, a);
 
-	colorBuffer[6] = make_uchar4(0, g, 0, a);
-	colorBuffer[7] = make_uchar4(0, g, 0, a);
-	colorBuffer[8] = make_uchar4(0, g, 0, a);
-	colorBuffer[9] = make_uchar4(0, g, 0, a);
-	colorBuffer[10] = make_uchar4(0, g, 0, a);
-	colorBuffer[11] = make_uchar4(0, g, 0, a);
+	objects[2].color[0] = make_uchar4(0, g, 0, a);
+	objects[2].color[1] = make_uchar4(0, g, 0, a);
+	objects[2].color[2] = make_uchar4(0, g, 0, a);
+	objects[3].color[0] = make_uchar4(0, g, 0, a);
+	objects[3].color[1] = make_uchar4(0, g, 0, a);
+	objects[3].color[2] = make_uchar4(0, g, 0, a);
 
-	colorBuffer[12] = make_uchar4(r, g, 0, a);
-	colorBuffer[13] = make_uchar4(r, g, 0, a);
-	colorBuffer[14] = make_uchar4(r, g, 0, a);
-	colorBuffer[15] = make_uchar4(r, g, 0, a);
-	colorBuffer[16] = make_uchar4(r, g, 0, a);
-	colorBuffer[17] = make_uchar4(r, g, 0, a);
+	objects[4].color[0] = make_uchar4(r, g, 0, a);
+	objects[4].color[1] = make_uchar4(r, g, 0, a);
+	objects[4].color[2] = make_uchar4(r, g, 0, a);
+	objects[5].color[0] = make_uchar4(r, g, 0, a);
+	objects[5].color[1] = make_uchar4(r, g, 0, a);
+	objects[5].color[2] = make_uchar4(r, g, 0, a);
 
-	colorBuffer[18] = make_uchar4(r, 0, b, a);
-	colorBuffer[19] = make_uchar4(r, 0, b, a);
-	colorBuffer[20] = make_uchar4(r, 0, b, a);
-	colorBuffer[21] = make_uchar4(r, 0, b, a);
-	colorBuffer[22] = make_uchar4(r, 0, b, a);
-	colorBuffer[23] = make_uchar4(r, 0, b, a);
+	objects[6].color[0] = make_uchar4(r, 0, b, a);
+	objects[6].color[1] = make_uchar4(r, 0, b, a);
+	objects[6].color[2] = make_uchar4(r, 0, b, a);
+	objects[7].color[0] = make_uchar4(r, 0, b, a);
+	objects[7].color[1] = make_uchar4(r, 0, b, a);
+	objects[7].color[2] = make_uchar4(r, 0, b, a);
 
-	colorBuffer[24] = make_uchar4(0, g, b, a);
-	colorBuffer[25] = make_uchar4(0, g, b, a);
-	colorBuffer[26] = make_uchar4(0, g, b, a);
-	colorBuffer[27] = make_uchar4(0, g, b, a);
-	colorBuffer[28] = make_uchar4(0, g, b, a);
-	colorBuffer[29] = make_uchar4(0, g, b, a);
+	objects[8].color[0] = make_uchar4(0, g, b, a);
+	objects[8].color[1] = make_uchar4(0, g, b, a);
+	objects[8].color[2] = make_uchar4(0, g, b, a);
+	objects[9].color[0] = make_uchar4(0, g, b, a);
+	objects[9].color[1] = make_uchar4(0, g, b, a);
+	objects[9].color[2] = make_uchar4(0, g, b, a);
 
 
-	materialIndexBuffer[0] = make_uchar1(0);
-	materialIndexBuffer[1] = make_uchar1(0);
-	materialIndexBuffer[2] = make_uchar1(0);
-	materialIndexBuffer[3] = make_uchar1(0);
-	materialIndexBuffer[4] = make_uchar1(0);
-	materialIndexBuffer[5] = make_uchar1(0);
-	materialIndexBuffer[6] = make_uchar1(0);
-	materialIndexBuffer[7] = make_uchar1(0);
-	materialIndexBuffer[8] = make_uchar1(0);
-	materialIndexBuffer[9] = make_uchar1(0);
+	objects[0].materialIndex = make_uchar1(0);
+	objects[1].materialIndex = make_uchar1(0);
+	objects[2].materialIndex = make_uchar1(0);
+	objects[3].materialIndex = make_uchar1(0);
+	objects[4].materialIndex = make_uchar1(0);
+	objects[5].materialIndex = make_uchar1(0);
+	objects[6].materialIndex = make_uchar1(0);
+	objects[7].materialIndex = make_uchar1(0);
+	objects[8].materialIndex = make_uchar1(0);
+	objects[9].materialIndex = make_uchar1(0);
 	//
 
 	return 10;
@@ -152,7 +151,7 @@ void initMaterials()
 	materialBuffer[0].Kni = 0.0f;
 	materialBuffer[0].Ni = 1.0f;
 
-	materialBuffer[1].Kd = 0.2f;
+	materialBuffer[1].Kd = 0.0f;
 	materialBuffer[1].Ks = 1.0f;
 	materialBuffer[1].Kni = 0.0f;
 	materialBuffer[1].Ni = 1.00f;
@@ -185,29 +184,25 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 	unsigned char b = (0) & 0xff;
 	unsigned char a = (255) & 0xff;
 
-	int order = existFaceNum * 3;
 	int faceOrder = existFaceNum;
 	int faceSize = obj.f.size();
 	int testnum = obj.f[0].vertexIndex[0];
 
 	for (int i = 0; i<faceSize; i++)
 	{
+		objects[faceOrder].vertex[0] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[1] - 1], offset);
+		objects[faceOrder].vertex[1] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[0] - 1], offset);
+		objects[faceOrder].vertex[2] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[2] - 1], offset);
+		
+		objects[faceOrder].normal[0] = obj.vn[(obj.f[i].normalIndex[1]) - 1];
+		objects[faceOrder].normal[1] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
+		objects[faceOrder].normal[2] = obj.vn[(obj.f[i].normalIndex[2]) - 1];
 
-		vertexBuffer[order] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[1] - 1], offset);
-		normalBuffer[order] = obj.vn[(obj.f[i].normalIndex[1]) - 1];
-		colorBuffer[order] = make_uchar4(r, g, b, a);
+		objects[faceOrder].color[0] = make_uchar4(r, g, b, a);
+		objects[faceOrder].color[1] = make_uchar4(r, g, b, a);
+		objects[faceOrder].color[2] = make_uchar4(r, g, b, a);
 
-		vertexBuffer[order + 1] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[0] - 1], offset);
-		normalBuffer[order + 1] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
-		colorBuffer[order + 1] = make_uchar4(r, g, b, a);
-
-		vertexBuffer[order + 2] = float3Plusfloat3(obj.v[obj.f[i].vertexIndex[2] - 1], offset);
-		normalBuffer[order + 2] = obj.vn[(obj.f[i].normalIndex[2]) - 1];
-		colorBuffer[order + 2] = make_uchar4(r, g, b, a);
-		order += 3;
-
-
-		materialIndexBuffer[faceOrder] = make_uchar1(materialIndex);
+		objects[faceOrder].materialIndex = make_uchar1(materialIndex);
 		faceOrder++;
 	}
 	return  faceSize;
@@ -215,29 +210,15 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 
 void readFile()  // currently is premade
 {
+	totalNum =  10+4968;
+	//totalNum = 22;
+	size_t size = totalNum;
+	objects = (Object*)malloc(size * sizeof(Object));
+	memset(objects, 0, size * sizeof(Object));
+	cudaMalloc((void**)&objects_CUDA, size * sizeof(Object));
 
-
-	totalNum = 10+760;// 10+4968;
-	size_t size = totalNum * 3;
-	vertexBuffer = (float3*)malloc(size * sizeof(float3));
-	memset(vertexBuffer, 0, size * sizeof(float3));
-	cudaMalloc((void**)&vertexBuffer_CUDA, size * sizeof(float3));
-
-	normalBuffer = (float3*)malloc(size * sizeof(float3));
-	memset(normalBuffer, 0, size * sizeof(float3));
-	cudaMalloc((void**)&normalBuffer_CUDA, size * sizeof(float3));
-
-	colorBuffer = (uchar4*)malloc(size * sizeof(uchar4));
-	memset(colorBuffer, 0, size * sizeof(uchar4));
-	cudaMalloc((void**)&colorBuffer_CUDA, size * sizeof(uchar4));
-
-	materialIndexBuffer = (uchar1*)malloc(totalNum * sizeof(uchar1));
-	memset(materialIndexBuffer, 0, totalNum * sizeof(uchar1));
-	cudaMalloc((void**)&materialIndexBuffer_CUDA, totalNum * sizeof(uchar1));
-
-	cudaMalloc((KDTriangle**)&kdTriangles_CUDA, size * sizeof(KDTriangle));
-	kdTriangles = (KDTriangle*)malloc(size * sizeof(KDTriangle));
-	memset(kdTriangles, 0, size * sizeof(KDTriangle));
+	kdTriangles = (KDTriangle*)malloc(totalNum * sizeof(KDTriangle));
+	memset(kdTriangles, 0, totalNum * sizeof(KDTriangle));
 
 	photonBuffer = (Photon*)malloc(PHOTON_NUM * sizeof(Photon));
 	memset(photonBuffer, 0, PHOTON_NUM * sizeof(Photon));
@@ -245,48 +226,46 @@ void readFile()  // currently is premade
 
 	//yating edit
 	ObjInfo objBox;
-	objBox.readObj("sphere20.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
+	objBox.readObj("rabf.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
+	//objBox.readObj("box30.obj");
 	int curTotalTriFace = initCornellBox();
 	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,50,30 ),2);
 
 	for(int i =0;i<10;i++)
 	{
-		photonBuffer[i].pos = make_float3(5 - i / 10, 5 - i % 10, 0);
+		photonBuffer[i].pos = make_float3(5 - i / 10, 5 - i % 10, 1);
 		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
 	}
 
-	cudaMemcpy(vertexBuffer_CUDA, vertexBuffer, size * sizeof(float3), cudaMemcpyHostToDevice);
-	cudaMemcpy(normalBuffer_CUDA, normalBuffer, size * sizeof(float3), cudaMemcpyHostToDevice);
-	cudaMemcpy(colorBuffer_CUDA, colorBuffer, size * sizeof(uchar4), cudaMemcpyHostToDevice);
-	cudaMemcpy(materialIndexBuffer_CUDA, materialIndexBuffer, totalNum * sizeof(uchar1), cudaMemcpyHostToDevice);
+	cudaMemcpy(objects_CUDA, objects, size * sizeof(Object), cudaMemcpyHostToDevice);
 
 	cudaMemcpy(photonBuffer_CUDA, photonBuffer, PHOTON_NUM * sizeof(Photon), cudaMemcpyHostToDevice);
 
-	vector<KDTriangle*> tris;
-
+	vector<KDTriangle*>tris;
 	for (int i = 0; i < totalNum; ++i)
 	{
-		for (int j = 0; j < 3; ++j)
-		{
-			kdTriangles[i].index[j] = 3 * i + j;
-		}
+		kdTriangles[i].index = i;
 		kdTriangles[i].generate_bounding_box();
 		tris.push_back(&kdTriangles[i]);
 	}
 
-	KDTreeRoot = (KDNode*)malloc(sizeof(KDNode));
-	KDTreeRoot = KDTreeRoot->build(tris, 0);
-	KDTreeRoot->setSize();
+	TriangleIndexArray_CPU = (int*)malloc(sizeof(int) * totalNum);
+	TI_cur = 0;
+	KDTreeRoot_CPU = KDTreeRoot_CPU->build(tris, 0, TriangleIndexArray_CPU);
 
-	int sz = sizeof(KDNode);
-	
-	//float3 pos = make_float3(50, 100, 50);
-	//float3 dir = make_float3(-1, -1.5, 0);
-	//dir = normalize(dir);
-	//float3 hitPos;
-	//KDTriangle hitTriangle;
-	//KDTree::KDTreeHit(KDTreeRoot, vertexBuffer_CUDA, pos, dir, &hitPos, &hitTriangle);
+	cudaMalloc(&TriangleIndexArray_GPU, sizeof(int) * totalNum);
+	cudaMemcpy(TriangleIndexArray_GPU, TriangleIndexArray_CPU, sizeof(int) * totalNum, cudaMemcpyHostToDevice);
 
+	int h = TreeHeight(KDTreeRoot_CPU);
+	int arraySize = pow(2, TreeHeight(KDTreeRoot_CPU)) * sizeof(KDNode_CUDA);
+	KDTree_CPU = (KDNode_CUDA*)malloc(arraySize);
+	memset(KDTree_CPU, 0, _msize(KDTree_CPU));
+
+	setKDNodeIndex(KDTreeRoot_CPU, 0);
+
+	copyKDTreeToArray(KDTree_CPU, 0, KDTreeRoot_CPU);
+	cudaMalloc(&KDTree_GPU, arraySize);
+	cudaMemcpy(KDTree_GPU, KDTree_CPU, arraySize, cudaMemcpyHostToDevice);
 }
 
 
@@ -351,7 +330,7 @@ void display()
 	cudaGraphicsResourceGetMappedPointer((void**)&pixelPtr, &num_bytes, screenBufferPBO_CUDA);
 
 	//rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
-	rayTracingCuda(pixelPtr, totalNum, vertexBuffer_CUDA, normalBuffer_CUDA, colorBuffer_CUDA, photonBuffer_CUDA, materialBuffer_CUDA, materialIndexBuffer_CUDA);
+	rayTracingCuda(pixelPtr, totalNum, objects_CUDA, photonBuffer_CUDA, materialBuffer_CUDA, KDTree_GPU, TriangleIndexArray_GPU);
 
 	uchar4 * tmp = (uchar4*)malloc(sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT);
 	for (int i = 0; i<100; i++)
@@ -375,7 +354,7 @@ int main(int argc, char **argv)
 {
 	size_t value;
 	cudaDeviceGetLimit(&value, cudaLimitStackSize);
-	cudaDeviceSetLimit(cudaLimitStackSize, value * 64);
+	cudaDeviceSetLimit(cudaLimitStackSize, value * 128);
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);

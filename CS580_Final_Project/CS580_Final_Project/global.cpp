@@ -2,13 +2,11 @@
 
 GLuint screenBufferPBO;
 GLuint screenTexture2D;
-float3 *vertexBuffer, *normalBuffer;
-uchar4 *colorBuffer;
+Object *objects;
 Material *materialBuffer;
-uchar1 *materialIndexBuffer;
 
-KDTree::KDTriangle *kdTriangles;
-KDTree::KDNode* KDTreeRoot;
+int kd_size;
+KDTriangle *kdTriangles;
 
 Photon *photonBuffer;
 GLuint photonBufferPBO;

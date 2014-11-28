@@ -15,6 +15,10 @@ static float3 CAM_POS = make_float3(10,100,50);
 static float3 CAM_LOOKAT = make_float3(0,-1,0);
 static float3 CAM_LOOKUP = make_float3(0,0,1);
 static float3 CAM_LOOKRIGHT = make_float3(1,0,0);
+//static float3 CAM_POS = make_float3(50, 100, 50);
+//static float3 CAM_LOOKAT = make_float3(0, -1, 0);
+//static float3 CAM_LOOKUP = make_float3(0, 0, 1);
+//static float3 CAM_LOOKRIGHT = make_float3(1, 0, 0);
 static float CAM_FOV = 100;
 
 static float3 LIGHT_POS = make_float3(50,30,100);
@@ -37,5 +41,12 @@ typedef struct {
 	uchar4 power;
 	char phi, theta;
 }Photon;
+
+typedef struct {
+	float3 vertex[3];
+	float3 normal[3];
+	uchar4 color[3];
+	uchar1 materialIndex;
+}Object;
 
 #endif
