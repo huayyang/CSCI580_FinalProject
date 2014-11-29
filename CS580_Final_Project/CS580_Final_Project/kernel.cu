@@ -1,14 +1,60 @@
 #include "rayTracingProcessor.cuh"
+#include "KDTree.h"
 #include "defines.h"
 #include "math_functions.h"
+#include "global.h"
 #include <cuda.h>
 #include <curand.h>
 #include <iostream>
+
+#define eps 10e-8
 
 __device__ unsigned int x = 123456789,
 y = 362436000,
 z = 521288629,
 c = 7654321; /* Seed variables */
+
+/* operators */
+__device__ float3 operator+(const float3 &a, const float3 &b) {
+
+	return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
+
+}
+
+__device__ float3 operator-(const float3 &a, const float3 &b) {
+	float tmpx = a.x - b.x;
+	float tmpy = a.y - b.y;
+	float tmpz = a.z - b.z;
+	if (abs(tmpx) < eps)tmpx = 0;
+	if (abs(tmpy) < eps)tmpy = 0;
+	if (abs(tmpz) < eps)tmpz = 0;
+	return make_float3(tmpx, tmpy, tmpz);
+
+}
+
+__device__ float3 operator*(const float3 &a, const float3 &b) {
+
+	return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
+
+}
+
+__device__ float3 operator*(const float3 &a, const float &b) {
+
+	return make_float3(a.x * b, a.y * b, a.z * b);
+
+}
+
+__device__ bool operator==(const float3 &a, const float3 &b) {
+
+	return ((a.x == b.x) && (a.y == b.y) && (a.z == b.z));
+
+}
+
+__device__ float3 operator/(const float3 &a, const float3 &b) {
+
+	return make_float3(a.x / b.x, a.y / b.y, a.z / b.z);
+
+}
 
 __device__ unsigned int KISS()
 {
@@ -361,7 +407,7 @@ __device__ float3  lerp(int faceIndex, float3 *curVertex,float3 *curFnormal,floa
 			return res;
 }
 
-__device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Material* materials, uchar1* materialIndex, float3 pos, float3 dir, Photon* photons)
+__device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int count, Object* objects, Material* materials, float3 pos, float3 dir, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
 {
 	uchar4 resultColor;
 
@@ -369,7 +415,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	resultColor.y = 0;
 	resultColor.z = 0;
 
-	if (depth > 20)
+	if (depth > 30)
 	{
 		printf("aaa!\n");
 		return make_uchar4(255,255,255,255);
@@ -379,28 +425,43 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	int index = -1;
 	float3 hitpoint;
 	bool isFront = true;
+	KDTriangle hitTriangle;
+	float dis = INT_MAX;
+	bool kdIsFront;
 
-	for (int k = 0; k<count; k++)
-	{
-		if (k == currentIndex)
-			continue;
+	int KDIndex = -1;
+	float3 kdHit;
 
-		float3 hitPos;
-		bool isCurrentFront = true;
-		float distance = hitSurface(vertex + k * 3, pos, dir, &hitPos,&isCurrentFront);
-		if (distance < minDis && distance > 0.001)
-		{
-			isFront = isCurrentFront;
-			minDis = distance;
-			index = k;
-			hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
-		}
-	}
+	
+	KDTreeHit(0, objects, pos, dir, &kdHit, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &kdIsFront, currentIndex);
+	
+	KDIndex = hitTriangle.index;
+	//printf("KD Index:%d\n", index);
+	//for (int k = 0; k<count; k++)
+	//{
+	//	if (k == currentIndex)
+	//		continue;
+
+	//	float3 hitPos;
+	//	bool isCurrentFront = true;
+	//	float distance = hitSurface(objects[k].vertex, pos, dir, &hitPos,&isCurrentFront);
+	//	if (distance < minDis && distance > 0.001)
+	//	{
+	//		isFront = isCurrentFront;
+	//		minDis = distance;
+	//		index = k;
+	//		hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
+	//	}
+	//}
+
+	index = KDIndex;
+	hitpoint = kdHit;
+	minDis = dis;
+	isFront = kdIsFront;
 
 	if (index != -1)
 	{
-		//printf("%d\n",(int)(materialIndex[index].x));
-		Material hitMat = materials[(int)(materialIndex[index].x)];
+		Material hitMat = materials[(int)(objects[index].materialIndex.x)];
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
 		float Kni = hitMat.Kni;
@@ -417,43 +478,36 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 				float dis = dotProduct(temp, temp);
 				distances[k] = dis;
 			}
-			// sort and get the middle distance
-			//splitSort(distances,100,0,99);
-
-			//if (currentIndex != -1)
-			//	printf("%d \n",currentIndex);
 			
 			int3 colorInt;
-			colorInt.x = resultColor.x + Kd * color[index * 3].x / distances[radius] * 3000;
-			colorInt.y = resultColor.y + Kd * color[index * 3].y / distances[radius] * 3000;
-			colorInt.z = resultColor.z + Kd * color[index * 3].z / distances[radius] * 3000;
+			colorInt.x = resultColor.x + Kd * objects[index].color[0].x / distances[radius] * 3000;
+			colorInt.y = resultColor.y + Kd * objects[index].color[0].y / distances[radius] * 3000;
+			colorInt.z = resultColor.z + Kd * objects[index].color[0].z / distances[radius] * 3000;
 			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
 			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
 		}
 
-		// sort and get the middle distance
-		//splitSort(distances,100,0,99);
 		float tF = 0;
 
 		if (Kni > 0.001)
 		{
 			float3 edge1, edge2, realN;
-			edge1.x = vertex[index * 3 + 1].x - vertex[index * 3].x;
-			edge1.y = vertex[index * 3 + 1].y - vertex[index * 3].y;
-			edge1.z = vertex[index * 3 + 1].z - vertex[index * 3].z;
+			edge1.x = objects[index].vertex[1].x - objects[index].vertex[0].x;
+			edge1.y = objects[index].vertex[1].y - objects[index].vertex[0].y;
+			edge1.z = objects[index].vertex[1].z - objects[index].vertex[0].z;
 
-			edge2.x = vertex[index * 3 + 2].x - vertex[index * 3 + 1].x;
-			edge2.y = vertex[index * 3 + 2].y - vertex[index * 3 + 1].y;
-			edge2.z = vertex[index * 3 + 2].z - vertex[index * 3 + 1].z;
+			edge2.x = objects[index].vertex[2].x - objects[index].vertex[0].x;
+			edge2.y = objects[index].vertex[2].y - objects[index].vertex[0].y;
+			edge2.z = objects[index].vertex[2].z - objects[index].vertex[0].z;
 
 			realN = normalize(crossProduct(edge1, edge2));
 
 
 			float Ni = hitMat.Ni;
 
-			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
-			float3 curFNormal[3] ={normal[index*3], normal[index*3+1], normal[index*3+2]} ; 
+			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
+			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
 			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
 			lerpNormal = normalize(lerpNormal);
 
@@ -480,7 +534,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			else
 			{
 
-				uchar4 refractColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, outDir, photons);
+				uchar4 refractColor = getColor(depth + 1, index, pixels, count,objects, materials, hitpoint, outDir, photons, KDTree_GPU, TriangleIndexArray_GPU);
 			
 				int3 colorInt;
 				colorInt.x = resultColor.x + Kni * refractColor.x;
@@ -496,8 +550,8 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 		if ( (Ks + tF) > 0.001)
 		{
 			//yating create lerp
-			float3 curVex[3] ={ vertex[index*3],vertex[index*3+1],vertex[index*3+2]} ;
-			float3 curFNormal[3] ={normal[index*3], normal[index*3+1], normal[index*3+2]} ; 
+			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
+			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
 			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
 			lerpNormal = normalize(lerpNormal);
 			float NdotDir = -dotProduct(lerpNormal, dir);
@@ -505,11 +559,8 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
 			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
 			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
-			//printf("%d %f %f %f \n",currentIndex,reflectDir.x,reflectDir.y,reflectDir.z);
-			//printf("%d %f %f %f \n",currentIndex,normal[index * 3].x,normal[index * 3].y,normal[index * 3].z);
-			//printf("%d %f %f %f \n\n",currentIndex,dir.x,dir.y,dir.z);
 
-			uchar4 speculateColor = getColor(depth+1,index, pixels, count, vertex, normal, color, materials, materialIndex, hitpoint, reflectDir, photons);
+			uchar4 speculateColor = getColor(depth + 1, index, pixels, count, objects, materials, hitpoint, reflectDir, photons, KDTree_GPU, TriangleIndexArray_GPU);
 			
 			int3 colorInt;
 			colorInt.x = resultColor.x + (Ks + tF) * speculateColor.x;
@@ -526,7 +577,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	return resultColor;
 }
 
-__global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels,int count,float3* vertex,float3* normal,uchar4* color,Material* materials,uchar1* materialIndex,unsigned int width,unsigned int height,Camera* cam,Photon* photons)
+__global__ void kernel(int indexX, int indexY, int unitX, int unitY, uchar4 * pixels, int count, Object* objects, Material* materials, unsigned int width, unsigned int height, Camera* cam, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
 {
 	int i = blockIdx.x + indexX * unitX;
 	int j = threadIdx.x + indexY * unitY;
@@ -540,8 +591,8 @@ __global__ void kernel(int indexX,int indexY,int unitX,int unitY,uchar4 * pixels
 	dir = normalize(dir);
 
 	int id = i + j * width;
-	
-	pixels[id] = getColor(0,-1,pixels,count,vertex,normal,color,materials,materialIndex,cam->pos,dir,photons);
+
+	pixels[id] = getColor(0, -1, pixels, count, objects, materials, cam->pos, dir, photons, KDTree_GPU, TriangleIndexArray_GPU);
 	
 }
 
@@ -593,12 +644,12 @@ __global__ void CastPhoton(uchar4 * pixels, int count, float3* vertex, Photon* p
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-void rayTracingCuda(uchar4 * pixels, int count, float3* vertex, float3* normal, uchar4* color, Photon* photons, Material* materials, uchar1* materialIndex)
+void rayTracingCuda(uchar4 * pixels, int count, Object* objects, Photon* photons, Material* materials, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
 {
 	dim3 photonBlock(10);
 	dim3 photonThread(10);
 	// compute light photons
-	CastPhoton<<<photonBlock,photonThread>>>(pixels,count,vertex,photons,LIGHT_POS);
+	CastPhoton << <photonBlock, photonThread >> >(pixels, count, objects->vertex, photons, LIGHT_POS);
 	cudaThreadSynchronize();  
 	
 	//Photon* photonBuffer = (Photon*)malloc(100 * sizeof(Photon));
@@ -608,6 +659,7 @@ void rayTracingCuda(uchar4 * pixels, int count, float3* vertex, float3* normal, 
 	//{
 	//	std::cout<<" "<<photonBuffer[i].pos.x<<" "<<photonBuffer[i].pos.y<<" "<<photonBuffer[i].pos.z<<"\t";
 	//}
+
 
 	Camera* cam = (Camera*)malloc(sizeof(Camera));
 	cam->pos = CAM_POS;
@@ -645,7 +697,7 @@ void rayTracingCuda(uchar4 * pixels, int count, float3* vertex, float3* normal, 
 
 			// Launch a kernel on the GPU with one thread for each element.
 			
-			kernel<<<dimblock,dimthread>>>(indexX,indexY,UNIT_X,UNIT_Y,pixels,count,vertex,normal,color,materials,materialIndex,SCR_WIDTH,SCR_HEIGHT,mainCamera_CUDA,photons);
+			kernel << <dimblock, dimthread >> >(indexX, indexY, UNIT_X, UNIT_Y, pixels, count, objects, materials, SCR_WIDTH, SCR_HEIGHT, mainCamera_CUDA, photons, KDTree_GPU, TriangleIndexArray_GPU);
 
 			cudaThreadSynchronize();
 
@@ -655,5 +707,111 @@ void rayTracingCuda(uchar4 * pixels, int count, float3* vertex, float3* normal, 
 		width -= x;
 		indexX++;
 	}
+}
 
+__device__ bool ClipLine(int d, const BoundingBox& aabbBox, const float3& v0, const float3& v1, float& f_low, float& f_high)
+{
+	float f_dim_low, f_dim_high;
+
+	switch (d)
+	{
+	case 0:
+		f_dim_low = (aabbBox.min.x - v0.x) / (v1.x - v0.x);
+		f_dim_high = (aabbBox.max.x - v0.x) / (v1.x - v0.x);
+		break;
+	case 1:
+		f_dim_low = (aabbBox.min.y - v0.y) / (v1.y - v0.y);
+		f_dim_high = (aabbBox.max.y - v0.y) / (v1.y - v0.y);
+		break;
+	case 2:
+		f_dim_low = (aabbBox.min.z - v0.z) / (v1.z - v0.z);
+		f_dim_high = (aabbBox.max.z - v0.z) / (v1.z - v0.z);
+		break;
+	}
+
+	if (f_dim_high < f_dim_low)
+	{
+		float tmp = f_dim_high;
+		f_dim_high = f_dim_low;
+		f_dim_low = tmp;
+	}
+
+	if (f_dim_high < f_low)
+		return false;
+
+	if (f_dim_low > f_high)
+		return false;
+
+	f_low = max(f_dim_low, f_low);
+	f_high = min(f_dim_high, f_high);
+
+	if (f_low > f_high)
+		return false;
+
+	return true;
+}
+
+__device__ bool LineAABBIntersection(const BoundingBox& aabbBox, const float3& v0, const float3& dir, float3& vecIntersection, float& flFraction)
+{
+	float f_low = 0;
+	float f_high = 1;
+	float3 v1 = v0 + dir * 2000;
+
+	if (!ClipLine(0, aabbBox, v0, v1, f_low, f_high))
+		return false;
+
+	if (!ClipLine(1, aabbBox, v0, v1, f_low, f_high))
+		return false;
+
+	if (!ClipLine(2, aabbBox, v0, v1, f_low, f_high))
+		return false;
+
+	float3 b = v1 - v0;
+	vecIntersection = v0 + b * f_low;
+
+	flFraction = f_low;
+
+	return true;
+}
+
+__device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir, float3* hitPos, KDTriangle* hitTriangle, float* tmin, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, bool* isFront, int currentIndex)
+{
+	float3 interSect;
+	float fra;
+	if (LineAABBIntersection(KDTree_GPU[cur_node].bbox, pos, dir, interSect, fra))
+	{
+		bool hit_tri = false;
+		if (!KDTree_GPU[cur_node].isRoot)
+		{
+			bool hitleft = KDTreeHit(cur_node * 2 + 1, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
+			bool hitright = KDTreeHit(cur_node * 2 + 2, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
+			return hitleft || hitright;
+		}
+		else
+		{
+			float t = MAX_DIS;
+			float3 hit;
+			for (int i = 0; i < KDTree_GPU[cur_node].triangle_sz; ++i)
+			{
+				int index = TriangleIndexArray_GPU[KDTree_GPU[cur_node].stIndex + i];
+				t = hitSurface(objects[index].vertex, pos, dir, &hit, isFront);
+				if (t != MAX_DIS)
+				{
+					if (currentIndex != TriangleIndexArray_GPU[KDTree_GPU[cur_node].stIndex + i] && t < *tmin)
+					{
+						*tmin = t;
+						(*hitTriangle).index = TriangleIndexArray_GPU[KDTree_GPU[cur_node].stIndex + i];
+						*hitPos = hit;
+						hit_tri = true;
+					}
+				}
+			}
+			if (hit_tri)
+			{
+				return true;
+			}
+			return false;
+		}
+	}
+	return false;
 }
