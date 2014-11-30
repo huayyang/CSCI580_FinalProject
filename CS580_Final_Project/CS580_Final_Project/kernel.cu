@@ -431,11 +431,11 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 
 	int KDIndex = -1;
 	float3 kdHit;
-
+	hitTriangle.index = -1;
 	
-	KDTreeHit(0, objects, pos, dir, &kdHit, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &kdIsFront, currentIndex);
+	KDTreeHit(0, objects, pos, dir, &hitpoint, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &kdIsFront, currentIndex);
 	
-	KDIndex = hitTriangle.index;
+	index = hitTriangle.index;
 	//printf("KD Index:%d\n", index);
 	//for (int k = 0; k<count; k++)
 	//{
@@ -453,11 +453,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	//		hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
 	//	}
 	//}
-
-	index = KDIndex;
-	hitpoint = kdHit;
-	minDis = dis;
-	isFront = kdIsFront;
+	//isFront = kdIsFront;
 
 	if (index != -1)
 	{
@@ -795,7 +791,7 @@ __device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir,
 			{
 				int index = TriangleIndexArray_GPU[KDTree_GPU[cur_node].stIndex + i];
 				t = hitSurface(objects[index].vertex, pos, dir, &hit, isFront);
-				if (t != MAX_DIS)
+				if (t != MAX_DIS && t > 0.001)
 				{
 					if (currentIndex != TriangleIndexArray_GPU[KDTree_GPU[cur_node].stIndex + i] && t < *tmin)
 					{
