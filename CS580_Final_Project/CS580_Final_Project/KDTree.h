@@ -46,16 +46,19 @@ public:
 struct KDNode_CUDA
 {
 public:
+	int index;
 	BoundingBox bbox;
 	int stIndex, edIndex;
 	int triangle_sz;
 	int depth;
-	bool isRoot;
+	int left, right;
 };
 
+int treeSize(KDNode* node);
 int setKDNodeIndex(KDNode* root, int cur);
 int TreeHeight(KDNode* root);
-void copyKDTreeToArray(KDNode_CUDA* root, int cur, KDNode* KDTreeRoot_CPU);
+//void copyKDTreeToArray(KDNode_CUDA* root, int cur, KDNode* KDTreeRoot_CPU);
+int copyKDTreeToArray(KDNode_CUDA* root, KDNode* KDTreeRoot_CPU, int copy_index);
 
 static KDNode* KDTreeRoot_CPU;
 
@@ -70,5 +73,35 @@ void expandBoundingBox(KDNode *node, vector<KDTriangle*>& tris);
 
 
 /* KDTree-finish */
+
+/* KDTree_Photon */
+struct KDNode_Photon_CPU
+{
+	int split;
+	Photon photon;
+	vector<Photon*>photons;
+	KDNode_Photon_CPU* left, *right;
+};
+
+struct KDNode_Photon_GPU
+{
+	int left, right, parent;
+	int index;
+	int split;
+	Photon photon;
+};
+
+int Variance(vector<Photon*>photons);
+int TreeHeight(KDNode_Photon_CPU* root);
+void Photon_KDTree_Init(Photon* photons, KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU);
+
+KDNode_Photon_CPU* Photon_KDTreeBuild(vector<Photon*>photons, int depth);
+static KDNode_Photon_CPU* KDNodePhoton_CPU;
+static KDNode_Photon_GPU* KDNodePhotonArrayTree_CPU;
+
+int treeSize(KDNode_Photon_CPU* KDTreeRoot_CPU);
+int copyKDTreeToArray(KDNode_Photon_GPU* node_GPU, KDNode_Photon_CPU* KDTreeRoot_CPU, int copy_index);
+//void copyKDTreeToArray(KDNode_Photon_GPU* root, int cur, KDNode_Photon_CPU* node);
+/* KDTree_Photon-Finish */
 
 #endif

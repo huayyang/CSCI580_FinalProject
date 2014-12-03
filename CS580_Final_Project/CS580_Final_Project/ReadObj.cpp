@@ -215,9 +215,9 @@ while(infile.peek()!=-1){
 		token += 2;
 
 		float3 temp;
-		temp.x=getFloat(token);
-		temp.z=getFloat(token);
-		temp.y=getFloat(token);
+		temp.x=getFloat(token)*1.5;
+		temp.z=getFloat(token)*1.5;
+		temp.y=getFloat(token)*1.5;
 		v.push_back(temp);
       continue;
     }

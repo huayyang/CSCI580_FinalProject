@@ -2,9 +2,9 @@
 #include "global.h"
 
 #include <iostream>
+#include <ctime>
 
 using namespace std;
-#define PHOTON_NUM 100
 
 int initCornellBox()
 {
@@ -18,36 +18,44 @@ int initCornellBox()
 	objects[1].vertex[2] = make_float3(100, 0, 100);
 
 	objects[2].vertex[0] = make_float3(0, 0, 0);
-	objects[2].vertex[1] = make_float3(0, 100, 0);
-	objects[2].vertex[2] = make_float3(0, 100, 100);
+	objects[2].vertex[1] = make_float3(0, 150, 0);
+	objects[2].vertex[2] = make_float3(0, 150, 100);
 
 	objects[3].vertex[0] = make_float3(0, 0, 0);
-	objects[3].vertex[1] = make_float3(0, 100, 100);
+	objects[3].vertex[1] = make_float3(0, 150, 100);
 	objects[3].vertex[2] = make_float3(0, 0, 100);
 
 	objects[4].vertex[0] = make_float3(0, 0, 0);
 	objects[4].vertex[1] = make_float3(100, 0, 0);
-	objects[4].vertex[2] = make_float3(100, 100, 0);
+	objects[4].vertex[2] = make_float3(100, 150, 0);
 
 	objects[5].vertex[0] = make_float3(0, 0, 0);
-	objects[5].vertex[1] = make_float3(100, 100, 0);
-	objects[5].vertex[2] = make_float3(0, 100, 0);
+	objects[5].vertex[1] = make_float3(100, 150, 0);
+	objects[5].vertex[2] = make_float3(0, 150, 0);
 
 	objects[6].vertex[0] = make_float3(100, 0, 0);
-	objects[6].vertex[1] = make_float3(100, 100, 100);
-	objects[6].vertex[2] = make_float3(100, 100, 0);
+	objects[6].vertex[1] = make_float3(100, 150, 100);
+	objects[6].vertex[2] = make_float3(100, 150, 0);
 
 	objects[7].vertex[0] = make_float3(100, 0, 0);
 	objects[7].vertex[1] = make_float3(100, 0, 100);
-	objects[7].vertex[2] = make_float3(100, 100, 100);
+	objects[7].vertex[2] = make_float3(100, 150, 100);
 
 	objects[8].vertex[0] = make_float3(0, 0, 100);
-	objects[8].vertex[1] = make_float3(100, 100, 100);
+	objects[8].vertex[1] = make_float3(100, 150, 100);
 	objects[8].vertex[2] = make_float3(100, 0, 100);
 
 	objects[9].vertex[0] = make_float3(0, 0, 100);
-	objects[9].vertex[1] = make_float3(0, 100, 100);
-	objects[9].vertex[2] = make_float3(100, 100, 100);
+	objects[9].vertex[1] = make_float3(0, 150, 100);
+	objects[9].vertex[2] = make_float3(100, 150, 100);
+
+	objects[10].vertex[0] = make_float3(0, 150, 0);
+	objects[10].vertex[1] = make_float3(100, 150, 0);
+	objects[10].vertex[2] = make_float3(100, 150, 100);
+
+	objects[11].vertex[0] = make_float3(0, 150, 0);
+	objects[11].vertex[1] = make_float3(100, 150, 100);
+	objects[11].vertex[2] = make_float3(0, 150, 100);
 
 	objects[0].normal[0] = make_float3(0, 1, 0);
 	objects[0].normal[1] = make_float3(0, 1, 0);
@@ -84,10 +92,17 @@ int initCornellBox()
 	objects[9].normal[1] = make_float3(0, 0, -1);
 	objects[9].normal[2] = make_float3(0, 0, -1);
 
-	unsigned char r = (255) & 0xff;
-	unsigned char g = (255) & 0xff;
-	unsigned char b = (255) & 0xff;
-	unsigned char a = (255) & 0xff;
+	objects[10].normal[0] = make_float3(0, -1, 0);
+	objects[10].normal[1] = make_float3(0, -1, 0);
+	objects[10].normal[2] = make_float3(0, -1, 0);
+	objects[11].normal[0] = make_float3(0, -1, 0);
+	objects[11].normal[1] = make_float3(0, -1, 0);
+	objects[11].normal[2] = make_float3(0, -1, 0);
+
+	unsigned char r = (155) & 0xff;
+	unsigned char g = (155) & 0xff;
+	unsigned char b = (155) & 0xff;
+	unsigned char a = (155) & 0xff;
 	objects[0].color[0] = make_uchar4(r, g, b, a);
 	objects[0].color[1] = make_uchar4(r, g, b, a);
 	objects[0].color[2] = make_uchar4(r, g, b, a);
@@ -123,6 +138,12 @@ int initCornellBox()
 	objects[9].color[1] = make_uchar4(0, g, b, a);
 	objects[9].color[2] = make_uchar4(0, g, b, a);
 
+	objects[10].color[0] = make_uchar4(0, 0, b, a);
+	objects[10].color[1] = make_uchar4(0, 0, b, a);
+	objects[10].color[2] = make_uchar4(0, 0, b, a);
+	objects[11].color[0] = make_uchar4(0, 0, b, a);
+	objects[11].color[1] = make_uchar4(0, 0, b, a);
+	objects[11].color[2] = make_uchar4(0, 0, b, a);
 
 	objects[0].materialIndex = make_uchar1(0);
 	objects[1].materialIndex = make_uchar1(0);
@@ -134,9 +155,12 @@ int initCornellBox()
 	objects[7].materialIndex = make_uchar1(0);
 	objects[8].materialIndex = make_uchar1(0);
 	objects[9].materialIndex = make_uchar1(0);
+
+	objects[10].materialIndex = make_uchar1(0);
+	objects[11].materialIndex = make_uchar1(0);
 	//
 
-	return 10;
+	return 12;
 }
 
 void initMaterials()
@@ -157,9 +181,9 @@ void initMaterials()
 	materialBuffer[1].Ni = 1.00f;
 
 	materialBuffer[2].Kd = 0.0f;
-	materialBuffer[2].Ks = 0.0f;
-	materialBuffer[2].Kni = 1.0f;
-	materialBuffer[2].Ni = 1.5f;
+	materialBuffer[2].Ks = 0.5f;
+	materialBuffer[2].Kni = 0.6f;
+	materialBuffer[2].Ni = 1.9f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
@@ -176,14 +200,8 @@ float3 float3Plusfloat3(float3 a, float3 b)
 
 
 //yating
-int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
+int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex, uchar4 objColors)
 {
-
-	unsigned char r = (100) & 0xff;
-	unsigned char g = (100) & 0xff;
-	unsigned char b = (0) & 0xff;
-	unsigned char a = (255) & 0xff;
-
 	int faceOrder = existFaceNum;
 	int faceSize = obj.f.size();
 	int testnum = obj.f[0].vertexIndex[0];
@@ -198,9 +216,9 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 		objects[faceOrder].normal[1] = obj.vn[(obj.f[i].normalIndex[0]) - 1];
 		objects[faceOrder].normal[2] = obj.vn[(obj.f[i].normalIndex[2]) - 1];
 
-		objects[faceOrder].color[0] = make_uchar4(r, g, b, a);
-		objects[faceOrder].color[1] = make_uchar4(r, g, b, a);
-		objects[faceOrder].color[2] = make_uchar4(r, g, b, a);
+		objects[faceOrder].color[0] = objColors;
+		objects[faceOrder].color[1] = objColors;
+		objects[faceOrder].color[2] = objColors;
 
 		objects[faceOrder].materialIndex = make_uchar1(materialIndex);
 		faceOrder++;
@@ -208,10 +226,12 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex)
 	return  faceSize;
 }
 
-void readFile()  // currently is premade
+void readFile()  // currently i s premade
 {
-	totalNum =  10+4968;
-	//totalNum = 22;
+	//totalNum =  10+4968;
+	//totalNum = 22 + 4968;
+	totalNum = 772 * 1;
+	//totalNum = 10 + 871168;
 	size_t size = totalNum;
 	objects = (Object*)malloc(size * sizeof(Object));
 	memset(objects, 0, size * sizeof(Object));
@@ -226,21 +246,49 @@ void readFile()  // currently is premade
 
 	//yating edit
 	ObjInfo objBox;
-	objBox.readObj("rabf.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
-	//objBox.readObj("box30.obj");
+	ObjInfo objBox2;
+	//objBox.readObj("dragon.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
+	objBox.readObj("sphere20.obj");
+	objBox2.readObj("sphere20.obj");
 	int curTotalTriFace = initCornellBox();
-	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(30,50,30 ),2);
+	
+	uchar4 boxColor = make_uchar4(90,90,90,255);
+	curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(80,40, 13), 1, boxColor);
+	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(70,50,20 ), 2, boxColor);
 
-	for(int i =0;i<10;i++)
+	srand((unsigned)time(NULL));
+	for (int i = 0; i<PHOTON_NUM; i++)
 	{
-		photonBuffer[i].pos = make_float3(5 - i / 10, 5 - i % 10, 1);
+		float randx = 1; 
+		float randy = 1;
+		float randz = 1;
+		while((randx * randx + randy * randy + randz*randz) > 1)
+		{
+			randx = (rand() % 10000 - 5000) / 5000.0;
+			randy = (rand() % 10000 - 5000) / 5000.0;
+			randz = (rand() % 10000 - 5000) / 5000.0;
+		}
+		//cout<<randx<<" "<<randy<<" "<<randz<<endl;
+		//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
+		//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
+		photonBuffer[i].pos = make_float3(randx, randy, randz);
 		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
 	}
+	//for(int i = 0;i<PHOTON_SQR;i++)
+	//{
+	//	float randx;
+	//	float randy;
+	//	float randz;
+	//
+	//	photonBuffer[i].pos = make_float3(randx, randy, randz);
+	//	photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
+	//}
 
 	cudaMemcpy(objects_CUDA, objects, size * sizeof(Object), cudaMemcpyHostToDevice);
 
 	cudaMemcpy(photonBuffer_CUDA, photonBuffer, PHOTON_NUM * sizeof(Photon), cudaMemcpyHostToDevice);
 
+	/* KDTree For Triangles */
 	vector<KDTriangle*>tris;
 	for (int i = 0; i < totalNum; ++i)
 	{
@@ -256,19 +304,18 @@ void readFile()  // currently is premade
 	cudaMalloc(&TriangleIndexArray_GPU, sizeof(int) * totalNum);
 	cudaMemcpy(TriangleIndexArray_GPU, TriangleIndexArray_CPU, sizeof(int) * totalNum, cudaMemcpyHostToDevice);
 
-	int h = TreeHeight(KDTreeRoot_CPU);
-	int arraySize = pow(2, TreeHeight(KDTreeRoot_CPU)) * sizeof(KDNode_CUDA);
+	int node_num = treeSize(KDTreeRoot_CPU);
+	int arraySize = node_num * sizeof(KDNode_CUDA);
+	
 	KDTree_CPU = (KDNode_CUDA*)malloc(arraySize);
 	memset(KDTree_CPU, 0, _msize(KDTree_CPU));
 
 	setKDNodeIndex(KDTreeRoot_CPU, 0);
 
-	copyKDTreeToArray(KDTree_CPU, 0, KDTreeRoot_CPU);
+	copyKDTreeToArray(KDTree_CPU, KDTreeRoot_CPU, 0);
 	cudaMalloc(&KDTree_GPU, arraySize);
 	cudaMemcpy(KDTree_GPU, KDTree_CPU, arraySize, cudaMemcpyHostToDevice);
 }
-
-
 
 void init()
 {
@@ -330,6 +377,7 @@ void display()
 	cudaGraphicsResourceGetMappedPointer((void**)&pixelPtr, &num_bytes, screenBufferPBO_CUDA);
 
 	//rayTracingCuda(pixelPtr,totalNum,vertexBuffer_CUDA,normalBuffer_CUDA,colorBuffer_CUDA);
+	//rayTracingCuda(pixelPtr, totalNum, objects_CUDA, photonBuffer_CUDA, materialBuffer_CUDA, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, KDPhotonArray_GPU, KDNodePhotonArrayTree_CPU);
 	rayTracingCuda(pixelPtr, totalNum, objects_CUDA, photonBuffer_CUDA, materialBuffer_CUDA, KDTree_GPU, TriangleIndexArray_GPU);
 
 	uchar4 * tmp = (uchar4*)malloc(sizeof(uchar4) * SCR_WIDTH * SCR_HEIGHT);
@@ -354,7 +402,7 @@ int main(int argc, char **argv)
 {
 	size_t value;
 	cudaDeviceGetLimit(&value, cudaLimitStackSize);
-	cudaDeviceSetLimit(cudaLimitStackSize, value * 128);
+	cudaDeviceSetLimit(cudaLimitStackSize, value * 256);
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);

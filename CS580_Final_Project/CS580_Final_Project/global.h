@@ -17,6 +17,14 @@
 
 #pragma comment(lib, "glew32.lib")
 
+#define PHOTON_NUM 3600
+#define PHOTON_SQR 60
+#define PHOTON_RADIUS 30
+#define PHOTON_FORCE 100
+#define PHOTON_ANGLE 1.0
+#define PHOTON_DIFFUSE_RATE 1
+#define PHOTON_SHOW true
+
 extern GLuint screenBufferPBO;
 extern GLuint screenTexture2D;
 extern Object *objects;
@@ -27,6 +35,8 @@ extern KDTriangle *kdTriangles;
 
 extern GLuint photonBufferPBO;
 extern Photon *photonBuffer;
+extern Photon *photonArray;
+
 
 extern int totalNum;
 extern bool rendered;

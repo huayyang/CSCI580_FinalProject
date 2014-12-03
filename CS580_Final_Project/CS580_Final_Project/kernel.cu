@@ -3,7 +3,6 @@
 #include "defines.h"
 #include "math_functions.h"
 #include "global.h"
-#include <cuda.h>
 #include <curand.h>
 #include <iostream>
 
@@ -70,6 +69,19 @@ __device__ unsigned int KISS()
 	//return cuRAND();
 	return x + y + z;
 }
+
+__device__ double IntegerNoise (int n)
+
+{
+
+ n = (n >> 13) ^ n;
+
+ int nn = (n * (n * n * 60493 + 19990303) + 1376312589) & 0x7fffffff;
+
+ return 1 - ((double)nn / 1073741824.0);
+
+}
+
 
 __device__ float3 crossProduct(float3 a, float3 b)
 {
@@ -193,7 +205,6 @@ __device__ float checkDis(float3* vertex, float3 pos, float3 dir)
 	else
 		return MAX_DIS;
 }
-
 
 // 
 __device__ float hitSurface(float3* vertex, float3 pos, float3 dir, float3* pho, bool* isFront)
@@ -407,7 +418,7 @@ __device__ float3  lerp(int faceIndex, float3 *curVertex,float3 *curFnormal,floa
 			return res;
 }
 
-__device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int count, Object* objects, Material* materials, float3 pos, float3 dir, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
+__device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int count, Object* objects, Material* materials, float3 pos, float3 dir, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, int* pqtop)
 {
 	uchar4 resultColor;
 
@@ -415,10 +426,10 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	resultColor.y = 0;
 	resultColor.z = 0;
 
-	if (depth > 30)
+	if (depth > 10)
 	{
-		printf("aaa!\n");
-		return make_uchar4(255,255,255,255);
+		//printf("aaa!\n");
+		return make_uchar4(0,0,0,255);
 	}
 
 	float minDis = MAX_DIS;
@@ -426,34 +437,31 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	float3 hitpoint;
 	bool isFront = true;
 	KDTriangle hitTriangle;
-	float dis = INT_MAX;
-	bool kdIsFront;
+	float dis = MAX_DIS;
+	bool kdIsFront = true;
 
 	int KDIndex = -1;
 	float3 kdHit;
-	hitTriangle.index = -1;
-	
-	KDTreeHit(0, objects, pos, dir, &hitpoint, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &kdIsFront, currentIndex);
-	
-	index = hitTriangle.index;
-	//printf("KD Index:%d\n", index);
-	//for (int k = 0; k<count; k++)
-	//{
-	//	if (k == currentIndex)
-	//		continue;
 
-	//	float3 hitPos;
-	//	bool isCurrentFront = true;
-	//	float distance = hitSurface(objects[k].vertex, pos, dir, &hitPos,&isCurrentFront);
-	//	if (distance < minDis && distance > 0.001)
-	//	{
-	//		isFront = isCurrentFront;
-	//		minDis = distance;
-	//		index = k;
-	//		hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
-	//	}
-	//}
+	hitTriangle.index = -1;
+
+	KDTreeHit(0, objects, pos, dir, &kdHit, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	//KDTreeHit(0, objects, pos, dir, &hitpoint, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	//printf("Hit Pos: (%f,%f,%f) Hit Dis: (%f,%f,%f)\n", pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
+	KDIndex = hitTriangle.index;
+	if(KDIndex == 8 || KDIndex == 9)
+	{
+		float3 tempDir = kdHit - make_float3(50,30,100);
+		float tempDistance = dotProduct(tempDir, tempDir);
+		resultColor.x += 400 - tempDistance > 255 ? 255 : 400 -tempDistance;
+		resultColor.y += 400 - tempDistance > 255 ? 255 : 400 -tempDistance;
+		resultColor.z += 400 - tempDistance > 255 ? 255 : 400 -tempDistance;
+	}
+	index = KDIndex;
+	hitpoint = kdHit;
+	minDis = dis;
 	//isFront = kdIsFront;
+	isFront = true;
 
 	if (index != -1)
 	{
@@ -461,27 +469,154 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
 		float Kni = hitMat.Kni;
-		if (Kd > 0.001 && isFront)
+		if (Kd > eps && isFront)
 		{
-			int radius = 50;
-			float distances[100] = { 0 };
-			for (int k = 0; k<100; k++)
+			//int radius = PHOTON_RADIUS;
+			////float kdDistance[PHOTON_RADIUS] = { 0 };
+			////float distances[PHOTON_NUM] = { 0 };
+			//int searched[PHOTON_NUM] = { -1 };
+			//Photon pDistance[PHOTON_NUM] = { 0 };
+			//float3 near;
+			//float nearestDis = -1;
+			//
+			//int index_i = blockIdx.x;
+			//int index_j = threadIdx.x;
+			//pqtop[index_i*UNIT_Y + index_j] = 0;
+			//bool found = false;
+			//KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, hitpoint, &near, nearestDis, pDistance, radius, searched, index_i, index_j, pqtop);
+			////printf("Hit Point: (%f,%f,%f)\n", hitpoint.x, hitpoint.y, hitpoint.z);
+			////nearestDis = KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, hitpoint, distance, radius, &near);
+			////nearestDis = KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, KDPhotonArray_GPU, hitpoint, distance, 0, radius, &near);
+			////distance[radius-1] = near;
+			//float fardis = 0;
+			//float fardis2 = 0;
+			//for (int k = 0; k < radius; k++)
+			//{
+			//	float tempdis = (GetDistanceSquare(pDistance[k].pos, hitpoint));
+			//	if (fardis < tempdis)
+			//	{
+			//		fardis = tempdis;
+			//	}
+			//	fardis2 = tempdis + fardis2*k;
+			//	fardis2 /= (k+1);
+
+			//}
+			//bool notEq = false;
+			//float bf_min1 = INT_MAX;
+			//float bf_min2 = INT_MAX;
+			//float bf_min3 = INT_MAX;
+			//for (int k = 0; k < PHOTON_NUM; k++)
+			//{
+			//	float3 temp;
+			//	temp.x = hitpoint.x - photons[k].pos.x;
+			//	temp.y = hitpoint.y - photons[k].pos.y;
+			//	temp.z = hitpoint.z - photons[k].pos.z;
+			//	float dis = dotProduct(temp, temp);
+			//	if (dis < 0.1)
+			//	{
+			//		found = true;
+			//		break;
+			//	}
+			//}
+			//	/*if (abs(fardis - dis) < eps)
+			//	{
+			//		notEq = true;
+			//	}
+			//	if (dis < bf_min1)
+			//	{
+			//		bf_min3 = bf_min2;
+			//		bf_min2 = bf_min1;
+			//		bf_min1 = dis;
+			//	}
+			//	else if (dis < bf_min2 && abs(bf_min1 - bf_min2) > eps)
+			//	{
+			//		bf_min3 = bf_min2;
+			//		bf_min2 = dis;
+			//	}
+			//	else if (dis < bf_min3 && abs(bf_min1 - bf_min3) > eps && abs(bf_min2 - bf_min3) > eps)
+			//		bf_min3 = dis;*/
+			//}
+			//if (!notEq)printf("Not In!\n");
+			//
+			//if (abs(bf_min3 - fardis) > eps)
+			//{
+			//	printf("Not Equal! %.2f, %.2f\n", bf_min3, fardis2);
+
+			//	printf("Pos (%f,%f,%f)\n", hitpoint.x, hitpoint.y, hitpoint.z);
+			//	printf("\n");
+			//	//printf("KD Result: (%f)\n", minDis);
+			//	printf("\n");
+			//	for (int i = 0; i < radius; ++i)
+			//	{
+			//		printf("KD Result: (%f)\n", kdDistance[i]);
+			//	}
+			//	printf("\n");
+			//	for (int i = 0; i < PHOTON_NUM; ++i)
+			//	{
+			//		printf("BF Result: (%f)\n", distances[i]);
+			//	}
+			//}
+			//
+
+			float nearestDis = INT_MAX;
+			float distances[PHOTON_RADIUS] = { 0 };
+			for (int k = 0; k < PHOTON_RADIUS; ++k)
+			{
+				float3 temp;
+				temp.x = hitpoint.x - photons[k].pos.x;
+				temp.y = hitpoint.y - photons[k].pos.y;
+				temp.z = hitpoint.z - photons[k].pos.z;
+				distances[k] = dotProduct(temp, temp);
+			}
+				
+			for (int k = PHOTON_RADIUS; k<PHOTON_NUM; k++)
 			{
 				float3 temp;
 				temp.x = hitpoint.x - photons[k].pos.x;
 				temp.y = hitpoint.y - photons[k].pos.y;
 				temp.z = hitpoint.z - photons[k].pos.z;
 				float dis = dotProduct(temp, temp);
-				distances[k] = dis;
+				float maxInArray = 0;
+				int maxIndex = -1;
+				nearestDis = nearestDis < dis ? nearestDis : dis;
+				for (int i = 0; i < PHOTON_RADIUS; ++i)
+				{
+					if (maxInArray < distances[i])
+					{
+						maxInArray = distances[i];
+						maxIndex = i;
+					}
+				}
+				if (maxInArray > dis)
+				{
+					distances[maxIndex] = dis;
+				}
 			}
-			
-			int3 colorInt;
-			colorInt.x = resultColor.x + Kd * objects[index].color[0].x / distances[radius] * 3000;
-			colorInt.y = resultColor.y + Kd * objects[index].color[0].y / distances[radius] * 3000;
-			colorInt.z = resultColor.z + Kd * objects[index].color[0].z / distances[radius] * 3000;
-			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
-			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
-			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+			float avg = 0;
+			for (int k = 0; k < PHOTON_RADIUS; ++k)
+			{
+				avg += distances[k];
+			}
+			avg /= PHOTON_RADIUS;
+
+
+			if (!PHOTON_SHOW || nearestDis > 0.2)
+			{
+				int3 colorInt;
+				colorInt.x = resultColor.x + Kd * objects[index].color[0].x / avg * PHOTON_FORCE ;
+				colorInt.y = resultColor.y + Kd * objects[index].color[1].y / avg * PHOTON_FORCE ;
+				colorInt.z = resultColor.z + Kd * objects[index].color[2].z / avg * PHOTON_FORCE ;
+				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x; 
+				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+			}
+			else
+			{
+				resultColor.x = 244;
+				resultColor.y = 0;
+				resultColor.z = 0;
+			}
+
 		}
 
 		float tF = 0;
@@ -530,7 +665,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			else
 			{
 
-				uchar4 refractColor = getColor(depth + 1, index, pixels, count,objects, materials, hitpoint, outDir, photons, KDTree_GPU, TriangleIndexArray_GPU);
+				uchar4 refractColor = getColor(depth + 1, index, pixels, count, objects, materials, hitpoint, outDir, photons, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
 			
 				int3 colorInt;
 				colorInt.x = resultColor.x + Kni * refractColor.x;
@@ -539,6 +674,18 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
 				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+				//{
+				//	float maxcolor = colorInt.x;
+				//	maxcolor = colorInt.y > maxcolor ? colorInt.y : maxcolor;
+				//	maxcolor = colorInt.z > maxcolor ? colorInt.z : maxcolor;
+				//	if(maxcolor > 255)
+				//	{
+				//		float3 resultcolor = normalize(make_float3(colorInt.x, colorInt.y, colorInt.z));
+				//		resultColor.x = 255*resultcolor.x;
+				//		resultColor.y = 255*resultcolor.y;
+				//		resultColor.z = 255*resultcolor.z;
+				//	}
+				//}
 			}
 
 		}
@@ -550,21 +697,43 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
 			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
 			lerpNormal = normalize(lerpNormal);
-			float NdotDir = -dotProduct(lerpNormal, dir);
-			float3 reflectDir;
-			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
-			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
-			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
 
-			uchar4 speculateColor = getColor(depth + 1, index, pixels, count, objects, materials, hitpoint, reflectDir, photons, KDTree_GPU, TriangleIndexArray_GPU);
+			float NdotDir = -dotProduct(lerpNormal, dir);
+
+
+			if(NdotDir < 0 && isFront)
+			{
+				resultColor = getColor(depth+1, index, pixels, count, objects, materials, hitpoint, dir, photons,
+					KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
+				//resultColor.x = 0;
+				//resultColor.y = 0;
+				//resultColor.z = 255;
+
+			}
+			else
+			{
+				if(NdotDir < 0)
+				{
+					NdotDir = -NdotDir;
+					lerpNormal.x  = -lerpNormal.x ;
+					lerpNormal.y  = -lerpNormal.y ;
+					lerpNormal.z  = -lerpNormal.z ;
+				}
+				float3 reflectDir;
+				reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
+				reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
+				reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
+
+				uchar4 speculateColor = getColor(depth + 1, index, pixels, count, objects, materials, hitpoint, reflectDir, photons, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
 			
-			int3 colorInt;
-			colorInt.x = resultColor.x + (Ks + tF) * speculateColor.x;
-			colorInt.y = resultColor.y + (Ks + tF) * speculateColor.y;
-			colorInt.z = resultColor.z + (Ks + tF) * speculateColor.z;
-			resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
-			resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
-			resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+				int3 colorInt;
+				colorInt.x = resultColor.x + (Ks + tF) * speculateColor.x;
+				colorInt.y = resultColor.y + (Ks + tF) * speculateColor.y;
+				colorInt.z = resultColor.z + (Ks + tF) * speculateColor.z;
+				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
+				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
+				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
+			}
 
 		}
 
@@ -573,7 +742,7 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	return resultColor;
 }
 
-__global__ void kernel(int indexX, int indexY, int unitX, int unitY, uchar4 * pixels, int count, Object* objects, Material* materials, unsigned int width, unsigned int height, Camera* cam, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
+__global__ void kernel(int indexX, int indexY, int unitX, int unitY, uchar4 * pixels, int count, Object* objects, Material* materials, unsigned int width, unsigned int height, Camera* cam, Photon* photons, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, int *pqtop)
 {
 	int i = blockIdx.x + indexX * unitX;
 	int j = threadIdx.x + indexY * unitY;
@@ -588,64 +757,359 @@ __global__ void kernel(int indexX, int indexY, int unitX, int unitY, uchar4 * pi
 
 	int id = i + j * width;
 
-	pixels[id] = getColor(0, -1, pixels, count, objects, materials, cam->pos, dir, photons, KDTree_GPU, TriangleIndexArray_GPU);
-	
+	pixels[id] = getColor(0, -1, pixels, count, objects, materials, cam->pos, dir, photons, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
+	pixels[id].x = pixels[id].x > 225 ? 255 : pixels[id].x+30;
+	pixels[id].y = pixels[id].y > 225 ? 255 : pixels[id].y+30;
+	pixels[id].z = pixels[id].z > 225 ? 255 : pixels[id].z+30;
+	pixels[id].w = pixels[id].w > 225 ? 255 : pixels[id].w+30;
+
 }
 
-__global__ void CastPhoton(uchar4 * pixels, int count, float3* vertex, Photon* photons, float3 lightPos)
+__global__ void CastPhoton(uchar4 * pixels, int count, Object* objects, Photon* photons, float3 lightPos, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, Material* materials)
 {
 	int i = blockIdx.x;
 	int j = threadIdx.x;
 	float3 dir;
 
-	if (i >= 10 || j >= 10)
+	if (i >= PHOTON_SQR || j >= PHOTON_SQR)
 		return;
 
-	dir.x = photons[i * 10 + j].pos.x;
-	dir.y = photons[i * 10 + j].pos.y;
-	dir.z = -10;
-	photons[i * 10 + j].pos.x = photons[i * 10 + j].pos.y = photons[i * 10 + j].pos.z = -100;
+	dir.x = photons[i * PHOTON_SQR + j].pos.x;
+	dir.y = photons[i * PHOTON_SQR + j].pos.y;
+	dir.z = photons[i * PHOTON_SQR + j].pos.z;
+	//dir.z = -1 * PHOTON_ANGLE;
+	photons[i * PHOTON_SQR + j].pos.x = photons[i * PHOTON_SQR + j].pos.y = photons[i * PHOTON_SQR + j].pos.z = -100;
 	dir = normalize(dir);
-
-
 
 	float minDis = MAX_DIS;
 	int index = -1;
+	int currentIndex = -1;
 	bool isFront = true;
-	for (int k = 0; k<count; k++)
+	float3 hitPos;
+	float3 hitStart = lightPos;
+	KDTriangle hitTriangle; 
+	int loopcount = 0;
+
+PHOTON_CAST:
+
+	hitTriangle.index = -1;
+	loopcount++;
+	if(loopcount > 30)
 	{
-		float3 temp;
-		float distance = hitSurface(vertex + k * 3, lightPos, dir, &temp,&isFront);
-		if (distance < minDis)
-		{
-			minDis = distance;
-			index = k;
-			photons[i * 10 + j].pos.x = temp.x;
-			photons[i * 10 + j].pos.y = temp.y;
-			photons[i * 10 + j].pos.z = temp.z;
-		}
+		printf("too many!\n");
+		photons[i*PHOTON_SQR + j].pos = hitStart;
+		photons[i * PHOTON_SQR + j].power.x = 0;
+		photons[i * PHOTON_SQR + j].power.y = 0;
+		photons[i * PHOTON_SQR + j].power.z = 0;
+		goto END_CAST;
 	}
+
+	KDTreeHit(0, objects, hitStart, dir, &hitPos, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+
+	index = hitTriangle.index;
+
 	if (index != -1)
 	{
-		photons[i * 10 + j].power.x = 255;
-		photons[i * 10 + j].power.y = 255;
-		photons[i * 10 + j].power.z = 255;
+
+		Material hitMat = materials[(int)(objects[index].materialIndex.x)];
+		float Kd = hitMat.Kd;
+		float Ks = hitMat.Ks;
+		float Kni = hitMat.Kni;
+		if( Kd > 0.5)
+		{
+			if( IntegerNoise(i*j + dir.x* 50 + dir.y * 30 + dir.z * 10) > PHOTON_DIFFUSE_RATE)
+			{
+				float3 newDir = make_float3(IntegerNoise(i*j + dir.x* 10 + dir.y * 30 + dir.z * 50), IntegerNoise(i*j + dir.x* 50 + dir.y * 30 + dir.z * 10), IntegerNoise(i*j + dir.x* 200 + dir.y * 30 + dir.z * 10));
+				if(dotProduct(newDir, objects[index].normal[0]) > 0)
+				{
+					dir = normalize(newDir);
+					hitStart = hitPos;
+					currentIndex = index;
+					goto PHOTON_CAST;
+				}
+				else
+				{
+					dir = normalize(newDir);
+					dir.x =-dir.x; dir.y =-dir.y; dir.z =-dir.z;
+					hitStart = hitPos;
+					currentIndex = index;
+					goto PHOTON_CAST;
+				}
+			}
+			else
+			{
+				photons[i*PHOTON_SQR + j].pos = hitPos;
+				photons[i * PHOTON_SQR + j].power.x = 255;
+				photons[i * PHOTON_SQR + j].power.y = 255;
+				photons[i * PHOTON_SQR + j].power.z = 255;
+			}
+		}
+		if (Kni > 0.5)
+		{
+			float3 edge1, edge2, realN;
+			edge1.x = objects[index].vertex[1].x - objects[index].vertex[0].x;
+			edge1.y = objects[index].vertex[1].y - objects[index].vertex[0].y;
+			edge1.z = objects[index].vertex[1].z - objects[index].vertex[0].z;
+
+			edge2.x = objects[index].vertex[2].x - objects[index].vertex[0].x;
+			edge2.y = objects[index].vertex[2].y - objects[index].vertex[0].y;
+			edge2.z = objects[index].vertex[2].z - objects[index].vertex[0].z;
+
+			realN = normalize(crossProduct(edge1, edge2));
+
+
+			float Ni = hitMat.Ni;
+
+			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
+			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
+			float3 lerpNormal = lerp(index,curVex,curFNormal, hitPos);
+			lerpNormal = normalize(lerpNormal);
+
+			float3 outDir;
+			float3 n;
+			if (isFront)
+			{
+				n.x = lerpNormal.x;
+				n.y = lerpNormal.y;
+				n.z = lerpNormal.z;
+			}
+			else
+			{
+				n.x = -lerpNormal.x;
+				n.y = -lerpNormal.y;
+				n.z = -lerpNormal.z;
+				Ni = 1/Ni;
+			}
+
+			if (!getR(&outDir,Ni,dir,n))
+			{
+				Ks = 1.0;
+			}
+			else
+			{
+				dir = normalize(outDir);
+				hitStart = hitPos;
+				goto PHOTON_CAST;
+			}
+
+		}
+		if (Ks > 0.5)
+		{
+			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
+			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
+			float3 lerpNormal = lerp(index,curVex,curFNormal, hitPos);
+			lerpNormal = normalize(lerpNormal);
+
+			float NdotDir = -dotProduct(lerpNormal, dir);
+			float3 reflectDir;
+			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
+			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
+			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
+
+			if(i == 14 && j == 8 && NdotDir < 0)
+			{
+				printf("wrong dir %d, %d(%d, %d), (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f) = %.2f  ???\n", 
+				loopcount, index ,i,j, dir.x, dir.y, dir.z, lerpNormal.x, lerpNormal.y, lerpNormal.z, NdotDir);
+				hitStart = hitPos;
+				currentIndex = index;
+				goto PHOTON_CAST;
+			}
+			else
+			{
+				dir = reflectDir;
+				hitStart = hitPos;
+				currentIndex = index;
+				goto PHOTON_CAST;
+			}
+		}
+
 	}
 	else
 	{
-		photons[i * 10 + j].power.x = 0;
-		photons[i * 10 + j].power.y = 0;
-		photons[i * 10 + j].power.z = 0;
+		photons[i*PHOTON_SQR + j].pos = hitStart;
+		photons[i * PHOTON_SQR + j].power.x = 0;
+		photons[i * PHOTON_SQR + j].power.y = 0;
+		photons[i * PHOTON_SQR + j].power.z = 0;
+	}
+END_CAST:
+
+}
+
+__device__ void PrintTree(KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, int cur, Photon* photons)
+{
+	
+	//printf("Node: (%d,%d)\n", KDNodePhotonArrayTree_GPU[cur].stIndex, KDNodePhotonArrayTree_GPU[cur].edIndex);
+	//printf("Node: (%f,%f,%f) split: %d\n", KDNodePhotonArrayTree_GPU[cur].photon.pos.x, KDNodePhotonArrayTree_GPU[cur].photon.pos.y, KDNodePhotonArrayTree_GPU[cur].photon.pos.z, KDNodePhotonArrayTree_GPU[cur].split);
+	//printf("Node %d, Left %d, Right %d\n", KDNodePhotonArrayTree_GPU[cur].index, KDNodePhotonArrayTree_GPU[cur].left, KDNodePhotonArrayTree_GPU[cur].right);
+	printf("Node %d Cood: (%f,%f,%f)\n", KDNodePhotonArrayTree_GPU[cur].index, KDNodePhotonArrayTree_GPU[cur].photon.pos.x, KDNodePhotonArrayTree_GPU[cur].photon.pos.y, KDNodePhotonArrayTree_GPU[cur].photon.pos.z);
+	printf("Node %d, Parent: %d, Left: %d, Right: %d\n", KDNodePhotonArrayTree_GPU[cur].index, KDNodePhotonArrayTree_GPU[cur].parent, KDNodePhotonArrayTree_GPU[cur].left, KDNodePhotonArrayTree_GPU[cur].right);
+	if (KDNodePhotonArrayTree_GPU[cur].left != -1)
+	{
+		PrintTree(KDNodePhotonArrayTree_GPU, KDNodePhotonArrayTree_GPU[cur].left, photons);
+	}
+	if (KDNodePhotonArrayTree_GPU[cur].right != -1)
+	{
+		PrintTree(KDNodePhotonArrayTree_GPU, KDNodePhotonArrayTree_GPU[cur].right, photons);
 	}
 }
 
+__global__ void test(KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, Photon* photons, int* pqtop)
+{
+	//printf("Print Tree:%d\n", KDNodePhotonArrayTree_GPU[0].left);
+	//PrintTree(KDNodePhotonArrayTree_GPU,0, photons);
+	////printf("\n");
+
+	//float3 target = make_float3(100,55.248020,-0.000001);
+	////float3 target = make_float3(100, 55.248020, 10);
+	//int radius = PHOTON_RADIUS;
+	//float kdDistance[PHOTON_NUM] = { 0 };
+	//float distances[PHOTON_NUM] = { 0 };
+	//int searched[PHOTON_NUM] = { 0 };
+	//Photon pDistance[PHOTON_NUM] = { 0 };
+	//float3 near;
+	//float nearestDis = -1;
+	//pqtop = 0;
+	
+	float3 hitpoint = make_float3(100,44.060032,100);
+	int radius = PHOTON_RADIUS;
+	//float kdDistance[PHOTON_RADIUS] = { 0 };
+	//float distances[PHOTON_NUM] = { 0 };
+	int searched[PHOTON_NUM] = { -1 };
+	Photon pDistance[PHOTON_NUM] = { 0 };
+	float3 near;
+	float nearestDis = -1;
+	
+	//printf("%d, %d, %d \n", i, j, pqtop[0]);
+	pqtop[0] = 0;
+	printf("KNN\n");
+	//printf("%d, %d \n", i, j);
+	bool found = false;
+	KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, hitpoint, &near, nearestDis, pDistance, radius, searched, 0, 0, pqtop);
+	//
+	//printf("Target: (%f,%f,%f)\n", target.x, target.y, target.z);
+	//printf("Nearest: (%f,%f,%f)\n", near.x, near.y, near.z);
+	//printf("Nearest Distance: %f\n", nearestDis);
+
+	for (int i = 0; i < radius; ++i)
+	{
+		//printf("Nearest Points: (%f,%f,%f)\n", pDistance[i].pos.x, pDistance[i].pos.y, pDistance[i].pos.z);
+		printf("Distance: %f\n", GetDistanceSquare(pDistance[i].pos, hitpoint));
+	}
+		
+
+	//nearestDis = INT_MAX;
+	//for (int i = 0; i < PHOTON_NUM; ++i)
+	//{
+	//	float dis = GetDistanceSquare(photons[i].pos, target);
+	//	if (nearestDis > dis)
+	//	{
+	//		nearestDis = dis;
+	//		near = photons[i].pos;
+	//	}
+	//}
+	//printf("Brute Force Nearest Distance: %f\n", nearestDis);
+	//printf("Brute Force Nearest: (%f,%f,%f)\n", near.x, near.y, near.z);
+	//printf("%f\n", KDPhotonArray_GPU[0].pos.x);
+	//printf("test: %d\n", KDNodePhotonArrayTree_GPU[0].stIndex);
+}
+
+
+__global__ void KDTree_Show(KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, Object* objects, int currentIndex)
+{
+	//displayKDTree(0, KDTree_GPU);
+	//float3 pos = make_float3(55, 65, 70);
+	float3 pos = make_float3(63.034805, 65, 26.537350);
+	//float3 dir = make_float3(30 - pos.x, 50 - pos.y, 30 - pos.z);
+	float3 dir = make_float3(0.295529, 0.793530, -0.531952);
+	dir = normalize(dir);
+	float3 hitPos;
+	KDTriangle hitTriangle;
+
+	float dis = INT_MAX;
+	bool isFront;
+	KDTreeHit(0, objects, pos, dir, &hitPos, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	//printf("Compare times:%d\n", visit_node);
+	//printf("Check triangle:%d\n", visit_triangle);
+	//objects[hitTriangle.index].color[0] = make_uchar4(0, 0, 0, 0);
+	printf("Hit Position: %f,%f,%f\n", hitPos.x, hitPos.y, hitPos.z);
+	printf("Hit Triangle: %d\n\n", hitTriangle.index);
+
+	float minDis = INT_MAX;
+	int index;
+	float3 hitpoint;
+
+	for (int k = 0; k<22; k++)
+	{
+		if (k == currentIndex)
+			continue;
+
+		float3 hitPos;
+		bool isCurrentFront = true;
+		float distance = hitSurface(objects[k].vertex, pos, dir, &hitPos, &isCurrentFront);
+		if (distance < minDis && distance > 0.001)
+		{
+			isFront = isCurrentFront;
+			minDis = distance;
+			index = k;
+			hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
+		}
+	}
+
+	printf("Hit Position: %f,%f,%f\n", hitpoint.x, hitpoint.y, hitpoint.z);
+	printf("Hit Triangle: %d\n\n", index);
+}
+
+__global__ void KDTree_Test(KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, Object* objects, int currentIndex)
+{
+	//displayKDTree(0, KDTree_GPU);
+
+	float3 pos = make_float3(20, 30, 90);
+	//float3 dir = make_float3(30 - pos.x, 50 - pos.y, 30 - pos.z);
+	float3 dir = make_float3(0, 0, -1);
+	dir = normalize(dir);
+	float3 hitPos;
+	KDTriangle hitTriangle;
+	hitTriangle.index = -1;
+
+	float dis = INT_MAX;
+	bool isFront;
+	KDTreeHit(0, objects, pos, dir, &hitPos, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	//printf("Compare times:%d\n", visit_node);
+	//printf("Check triangle:%d\n", visit_triangle);
+	//objects[hitTriangle.index].color[0] = make_uchar4(0, 0, 0, 0);
+	printf("Hit Position: %f,%f,%f\n", hitPos.x, hitPos.y, hitPos.z);
+	printf("Hit Triangle: %d\n\n", hitTriangle.index);
+
+	float minDis = MAX_DIS;
+	int index;
+	float3 hitpoint;
+	for (int k = 0; k<22; k++)
+	{
+		float3 hitPos;
+		bool isCurrentFront = true;
+		float distance = hitSurface(objects[k].vertex, pos, dir, &hitPos, &isCurrentFront);
+		if (distance < minDis && distance > 0.001)
+		{
+			isFront = isCurrentFront;
+			minDis = distance;
+			index = k;
+			hitpoint.x = hitPos.x; hitpoint.y = hitPos.y; hitpoint.z = hitPos.z;
+		}
+	}
+	printf("Hit Position: %f,%f,%f\n", hitpoint.x, hitpoint.y, hitpoint.z);
+	printf("Hit Triangle: %d\n\n", index);
+}
+
+
 // Helper function for using CUDA to add vectors in parallel.
+//void rayTracingCuda(uchar4 * pixels, int count, Object* objects, Photon* photons, Material* materials, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, Photon* KDPhotonArray_GPU, KDNode_Photon_GPU* KDNodePhotonArrayTree_CPU)
 void rayTracingCuda(uchar4 * pixels, int count, Object* objects, Photon* photons, Material* materials, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU)
 {
-	dim3 photonBlock(10);
-	dim3 photonThread(10);
+	cudaMalloc(&pqtop, UNIT_X * UNIT_Y * sizeof(int));
+	dim3 photonBlock(PHOTON_SQR);
+	dim3 photonThread(PHOTON_SQR);
 	// compute light photons
-	CastPhoton << <photonBlock, photonThread >> >(pixels, count, objects->vertex, photons, LIGHT_POS);
+	CastPhoton << <photonBlock, photonThread >> >(pixels, count, objects, photons, LIGHT_POS, KDTree_GPU, TriangleIndexArray_GPU, materials);
 	cudaThreadSynchronize();  
 	
 	//Photon* photonBuffer = (Photon*)malloc(100 * sizeof(Photon));
@@ -656,6 +1120,51 @@ void rayTracingCuda(uchar4 * pixels, int count, Object* objects, Photon* photons
 	//	std::cout<<" "<<photonBuffer[i].pos.x<<" "<<photonBuffer[i].pos.y<<" "<<photonBuffer[i].pos.z<<"\t";
 	//}
 
+	//Photon_KDTree_Init(photons, KDNodePhotonArrayTree_GPU, KDPhotonArray_GPU);
+
+
+	/* KDTree For Photon */
+	//
+	//photonArray = (Photon*)malloc(PHOTON_NUM * sizeof(Photon));
+	//memset(photonArray, 0, PHOTON_NUM * sizeof(Photon));
+	//
+	//cudaMemcpy(photonArray, photons, PHOTON_NUM * sizeof(Photon), cudaMemcpyDeviceToHost);
+	//
+	//vector<Photon*> phos;
+	//for (int i = 0; i < PHOTON_NUM; ++i)
+	//	phos.push_back(&photonArray[i]);
+	//
+	//KDNodePhoton_CPU = Photon_KDTreeBuild(phos, 0);
+	//
+	//KDNodePhotonArrayTree_CPU = (KDNode_Photon_GPU*)malloc(PHOTON_NUM * sizeof(KDNode_Photon_GPU));
+	//memset(KDNodePhotonArrayTree_CPU, 0, PHOTON_NUM * sizeof(KDNode_Photon_GPU));
+	//
+	////setKDNodeIndex(KDNodePhoton_CPU, 0);
+	//copyKDTreeToArray(KDNodePhotonArrayTree_CPU, KDNodePhoton_CPU, 0);
+	//KDNodePhotonArrayTree_CPU[0].parent = -1;
+	////copyKDTreeToArray(KDNodePhotonArrayTree_CPU, 0, KDNodePhoton_CPU);
+	//
+	//cudaMalloc(&KDNodePhotonArrayTree_GPU, PHOTON_NUM * sizeof(KDNode_Photon_GPU));
+	//cudaMemcpy(KDNodePhotonArrayTree_GPU, KDNodePhotonArrayTree_CPU, PHOTON_NUM * sizeof(KDNode_Photon_GPU), cudaMemcpyHostToDevice);
+	//
+	////printf("CPU: %d\n", KDNodePhotonArrayTree_CPU[0].stIndex);
+	//
+	//free(photonArray);
+	//free(KDNodePhotonArrayTree_CPU);
+
+	
+	//printf("%d\n",KDNodePhotonArrayTree_CPU[0].stIndex);
+
+	//dim3 testBlock(1);
+	//dim3 testThread(1);
+
+	//test << <testBlock, testThread >> >(KDNodePhotonArrayTree_GPU, photons, pqtop);
+	//cudaThreadSynchronize();
+
+	//dim3 kdBlock(1);
+	//dim3 kdThread(1);
+	//KDTree_Test << <kdBlock, kdThread >> >(KDTree_GPU, TriangleIndexArray_GPU, objects, 11);
+	//cudaThreadSynchronize();
 
 	Camera* cam = (Camera*)malloc(sizeof(Camera));
 	cam->pos = CAM_POS;
@@ -693,7 +1202,7 @@ void rayTracingCuda(uchar4 * pixels, int count, Object* objects, Photon* photons
 
 			// Launch a kernel on the GPU with one thread for each element.
 			
-			kernel << <dimblock, dimthread >> >(indexX, indexY, UNIT_X, UNIT_Y, pixels, count, objects, materials, SCR_WIDTH, SCR_HEIGHT, mainCamera_CUDA, photons, KDTree_GPU, TriangleIndexArray_GPU);
+			kernel << <dimblock, dimthread >> >(indexX, indexY, UNIT_X, UNIT_Y, pixels, count, objects, materials, SCR_WIDTH, SCR_HEIGHT, mainCamera_CUDA, photons, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
 
 			cudaThreadSynchronize();
 
@@ -776,11 +1285,18 @@ __device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir,
 	float fra;
 	if (LineAABBIntersection(KDTree_GPU[cur_node].bbox, pos, dir, interSect, fra))
 	{
+		//if (cur_node == 1211)
+		//{
+		//	printf("1211 %d\n",KDTree_GPU[cur_node].triangle_sz);
+		//	printf("Box Hit:%d Left: %d Right: %d\n", cur_node, KDTree_GPU[cur_node].left, KDTree_GPU[cur_node].right);
+		//}
 		bool hit_tri = false;
-		if (!KDTree_GPU[cur_node].isRoot)
+		if (KDTree_GPU[cur_node].left != -1 || KDTree_GPU[cur_node].right != -1)
 		{
-			bool hitleft = KDTreeHit(cur_node * 2 + 1, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
-			bool hitright = KDTreeHit(cur_node * 2 + 2, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
+			//if (cur_node == 1211)printf("Box Hit:%d Left: %d Right: %d\n",cur_node, KDTree_GPU[cur_node].left, KDTree_GPU[cur_node].right);
+			bool hitleft = false, hitright = false;
+			if (KDTree_GPU[cur_node].left != -1)hitleft = KDTreeHit(KDTree_GPU[cur_node].left, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
+			if (KDTree_GPU[cur_node].right != -1)bool hitright = KDTreeHit(KDTree_GPU[cur_node].right, objects, pos, dir, hitPos, hitTriangle, tmin, KDTree_GPU, TriangleIndexArray_GPU, isFront, currentIndex);
 			return hitleft || hitright;
 		}
 		else
@@ -811,3 +1327,346 @@ __device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir,
 	}
 	return false;
 }
+
+__device__ float GetDistanceSquare(float3 pointA, float3 pointB)
+{
+	return (pointA.x - pointB.x) * (pointA.x - pointB.x) + (pointA.y - pointB.y) * (pointA.y - pointB.y) + (pointA.z - pointB.z) * (pointA.z - pointB.z);
+}
+
+__device__ bool CheckAlreadAdded(KDNode_Photon_GPU* close_set, int top, KDNode_Photon_GPU* node)
+{
+	for (int i = 0; i < top; ++i)
+	{
+		if (close_set[i].photon.pos == node->photon.pos && close_set[i].photon.phi == node->photon.phi)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+__device__ void KDTreeKNNSearch(KDNode_Photon_GPU* pNode, int cur, float3 point, float3* res, float& nMinDis, Photon* distance, int rad, int* searched, int index_i, int index_j, int* pqtop)
+{
+	if (cur == -1)
+		return;
+	//printf("KNN: %d\n", cur);
+	float nCurDis = GetDistanceSquare(pNode[cur].photon.pos, point);
+	if (nMinDis < 0 || nCurDis < nMinDis)
+	{
+		nMinDis = nCurDis;
+		*res = pNode[cur].photon.pos;
+	}
+
+	bool isIn = false;
+	for (int i = 0; i < pqtop[index_i*UNIT_Y + index_j]; ++i)
+	{
+		if (searched[i] == pNode[cur].index)
+		{
+			isIn = true;
+			break;
+		}
+	}
+	isIn = false;
+	if (pqtop[index_i*UNIT_Y + index_j] < rad)
+	{
+		if (!isIn)
+		{
+			searched[pqtop[index_i*UNIT_Y + index_j]] = pNode[cur].index;
+			distance[pqtop[index_i*UNIT_Y + index_j]] = pNode[cur].photon;
+			pqtop[index_i*UNIT_Y + index_j] = pqtop[index_i*UNIT_Y + index_j] + 1;
+			//printf("add %d\n", pqtop[index_i*UNIT_Y + index_j]);
+		}
+	}
+	else
+	{
+		if (!isIn)
+		{
+			float max = 0;
+			int maxIndex = 0;
+			for (int k = 0; k < pqtop[index_i*UNIT_Y + index_j]; ++k)
+			{
+				float dis = GetDistanceSquare(distance[k].pos, point);
+				if (max < dis)
+				{
+					max = dis;
+					maxIndex = k;
+				}
+			}
+			if (max > nCurDis)
+			{
+				distance[maxIndex] = pNode[cur].photon;
+				searched[maxIndex] = pNode[cur].index;
+			}
+		}
+	}
+
+	float minInQueue = 0;
+	for (int i = 0; i < pqtop[index_i*UNIT_Y + index_j]; ++i)
+	{
+		float dis = GetDistanceSquare(distance[i].pos, point);
+		if (minInQueue < dis)
+		{
+			minInQueue = dis;
+		}
+	}
+
+
+
+	//if (pNode[cur].split == -1)return;
+	if (pNode[cur].split == 0 && point.x <= pNode[cur].photon.pos.x || pNode[cur].split == 1 && point.y <= pNode[cur].photon.pos.y || pNode[cur].split == 2 && point.z <= pNode[cur].photon.pos.z)
+	{
+		if (pNode[cur].left != -1)KDTreeKNNSearch(pNode, pNode[cur].left, point, res, nMinDis, distance, rad, searched, index_i, index_j, pqtop);
+	}
+		
+	else
+	{
+		if (pNode[cur].right != -1)KDTreeKNNSearch(pNode, pNode[cur].right, point, res, nMinDis, distance, rad, searched, index_i, index_j, pqtop);
+	}
+		
+	float maxInQueue = 0;
+	for (int i = 0; i < pqtop[index_i*UNIT_Y + index_j]; ++i)
+	{
+		float dis = GetDistanceSquare(distance[i].pos, point);
+		if (maxInQueue < dis)
+		{
+			maxInQueue = dis;
+		}
+	}
+	float rang = 0;
+	switch (pNode[cur].split)
+	{
+	case 0:
+		rang = abs(point.x - pNode[cur].photon.pos.x);
+		break;
+	case 1:
+		rang = abs(point.y - pNode[cur].photon.pos.y);
+		break;
+	case 2:
+		rang = abs(point.z - pNode[cur].photon.pos.z);
+		break;
+	}
+	if (rang >= maxInQueue && pqtop[index_i*UNIT_Y + index_j] == rad)
+		return;
+
+	int axis = pNode[cur].split;
+	int pGoInto = pNode[cur].right;
+	switch (axis)
+	{
+	case 0:
+		if (point.x > pNode[cur].photon.pos.x)pGoInto = pNode[cur].left;
+		break;
+	case 1:
+		if (point.y > pNode[cur].photon.pos.y)pGoInto = pNode[cur].left;
+		break;
+	case 2:
+		if (point.z > pNode[cur].photon.pos.z)pGoInto = pNode[cur].left;
+		break;
+	}
+	if (pGoInto != -1)KDTreeKNNSearch(pNode, pGoInto, point, res, nMinDis, distance, rad, searched, index_i, index_j, pqtop);
+}
+
+//__device__ float KDTreeKNNSearch(KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, int cur, float3 target, float3* distance, int rad, float3* near)
+//{
+//	KDNode_Photon_GPU kd_point = KDNodePhotonArrayTree_GPU[cur];
+//	float3 nearest = kd_point.node_pos;
+//	KDNode_Photon_GPU back_point;
+//
+//	KDNode_Photon_GPU search_path[PHOTON_NUM];
+//	KDNode_Photon_GPU close_set[PHOTON_NUM];
+//	
+//	int cltop = 0;
+//	int top = 0;
+//	int pqtop = 0;
+//
+//	float Min_dist = GetDistanceSquare(nearest, target);
+//	int axis = 0;
+//
+//	while (kd_point.isValidate && axis != -1)
+//	{
+//		printf("Node %d\n", kd_point.Index);
+//		search_path[top++] = kd_point;
+//		if (GetDistanceSquare(nearest, target) > GetDistanceSquare(kd_point.node_pos, target))
+//		{
+//			nearest = kd_point.node_pos;
+//			Min_dist = GetDistanceSquare(kd_point.node_pos, target);
+//			printf("Min_dist: %f\n", Min_dist);
+//		}
+//
+//		axis = kd_point.split;
+//		//printf("axis:%d\n", axis);
+//		switch (axis)
+//		{
+//		case 0:
+//			if (target.x <= kd_point.node_pos.x)
+//			{
+//				cur = cur * 2 + 1;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			else
+//			{
+//				cur = cur * 2 + 2;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			break;
+//		case 1:
+//			if (target.y <= kd_point.node_pos.y)
+//			{
+//				cur = cur * 2 + 1;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			else
+//			{
+//				cur = cur * 2 + 2;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			break;
+//		case 2:
+//			if (target.z <= kd_point.node_pos.z)
+//			{
+//				cur = cur * 2 + 1;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			else
+//			{
+//				cur = cur * 2 + 2;
+//				kd_point = KDNodePhotonArrayTree_GPU[cur];
+//			}
+//			break;
+//		}
+//
+//		if (pqtop < rad)
+//		{
+//			//printf("1.Find Nearest: %d\n", pqtop);
+//			distance[pqtop++] = search_path[top-1].node_pos;
+//		}
+//		else
+//		{
+//			//printf("2.Find Nearest: %d\n", pqtop);
+//			float max = 0;
+//			int maxIndex = 0;
+//			int flag = 0;
+//			for (int i = 0; i < pqtop; ++i)
+//			{
+//				//if (distance[i] == back_point.node_pos)continue;
+//				float dis = GetDistanceSquare(distance[i], target);
+//				if (max < dis)
+//				{
+//					max = dis;
+//					maxIndex = i;
+//					flag = 1;
+//				}
+//			}
+//			if (flag)distance[maxIndex] = search_path[top-1].node_pos;
+//		}
+//
+//		if (pqtop < rad)
+//		{
+//			distance[pqtop++] = search_path[top - 1].node_pos;
+//		}
+//		else
+//		{
+//			float max = 0;
+//			int maxIndex = 0;
+//			for (int i = 0; i < pqtop; ++i)
+//			{
+//				float dis = GetDistanceSquare(distance[i], target);
+//				if (max < dis)
+//				{
+//					max = dis;
+//					maxIndex = i;
+//				}
+//			}
+//			if (GetDistanceSquare(distance[maxIndex], target) > GetDistanceSquare(search_path[top-1].node_pos,target))distance[maxIndex] = search_path[top - 1].node_pos;
+//		}
+//	}
+//
+//	while (top > 0)
+//	{
+//		//printf("Dead loop?%d\n%f\n",top, Min_dist);
+//		
+//		back_point = search_path[--top];
+//		axis = back_point.split;
+//		close_set[cltop++] = back_point;
+//		printf("Update Node: %d\n", back_point.Index);
+//		printf("Axis: %d\n", axis);
+//		switch (axis)
+//		{
+//		case 0:
+//			if ((target.x - back_point.node_pos.x) < Min_dist)
+//				{
+//					if (target.x <= back_point.node_pos.x)
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 2];
+//					}
+//					else
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 1];
+//					}
+//					if (kd_point.isValidate && !CheckAlreadAdded(close_set, cltop, &kd_point))
+//					{
+//						search_path[top++] = kd_point;
+//						printf("Push Node %d, Top: %d\n", kd_point.Index, top);
+//					}
+//				}
+//			break;
+//		case 1:
+//			if ((target.y - back_point.node_pos.y) < Min_dist)
+//				{
+//					if (target.y <= back_point.node_pos.y)
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 2];
+//					}
+//					else
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 1];
+//					}
+//					if (kd_point.isValidate && !CheckAlreadAdded(close_set, cltop, &kd_point))search_path[top++] = kd_point;
+//				}
+//			break;
+//		case 2:
+//			if ((target.z - back_point.node_pos.z) < Min_dist)
+//				{
+//					if (target.z <= back_point.node_pos.z)
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 2];
+//					}
+//					else
+//					{
+//						kd_point = KDNodePhotonArrayTree_GPU[back_point.Index * 2 + 1];
+//					}
+//					if (kd_point.isValidate && !CheckAlreadAdded(close_set, cltop, &kd_point))search_path[top++] = kd_point;
+//				}
+//			break;
+//		}
+//
+//		if (kd_point.isValidate && GetDistanceSquare(nearest, target) > GetDistanceSquare(kd_point.node_pos, target))
+//		{
+//			nearest = kd_point.node_pos;
+//			Min_dist = GetDistanceSquare(kd_point.node_pos, target);
+//
+//			if (pqtop < rad)
+//			{
+//				distance[pqtop++] = kd_point.node_pos;
+//			}
+//			else
+//			{
+//				float max = 0;
+//				int maxIndex = 0;
+//				for (int i = 0; i < pqtop; ++i)
+//				{
+//					float dis = GetDistanceSquare(distance[i], target);
+//					if (max < dis)
+//					{
+//						max = dis;
+//						maxIndex = i;
+//					}
+//				}
+//				if (GetDistanceSquare(distance[maxIndex], target) > Min_dist)distance[maxIndex] = kd_point.node_pos;
+//			}
+//		}
+//		
+//	}
+//
+//	*near = nearest;
+//	return Min_dist;
+//}
