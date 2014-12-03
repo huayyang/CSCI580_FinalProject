@@ -181,9 +181,9 @@ void initMaterials()
 	materialBuffer[1].Ni = 1.00f;
 
 	materialBuffer[2].Kd = 0.0f;
-	materialBuffer[2].Ks = 0.5f;
-	materialBuffer[2].Kni = 0.6f;
-	materialBuffer[2].Ni = 1.9f;
+	materialBuffer[2].Ks = 0.0f;
+	materialBuffer[2].Kni = 1.5f;
+	materialBuffer[2].Ni = 1.5f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
@@ -230,7 +230,7 @@ void readFile()  // currently i s premade
 {
 	//totalNum =  10+4968;
 	//totalNum = 22 + 4968;
-	totalNum = 772 * 1;
+	totalNum = 772 * 4;
 	//totalNum = 10 + 871168;
 	size_t size = totalNum;
 	objects = (Object*)malloc(size * sizeof(Object));
@@ -247,42 +247,100 @@ void readFile()  // currently i s premade
 	//yating edit
 	ObjInfo objBox;
 	ObjInfo objBox2;
+	ObjInfo objBox3;
+	ObjInfo objBox4;
 	//objBox.readObj("dragon.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
 	objBox.readObj("sphere20.obj");
 	objBox2.readObj("sphere20.obj");
+	objBox3.readObj("sphere20.obj");
+	objBox4.readObj("sphere20.obj");
 	int curTotalTriFace = initCornellBox();
 	
 	uchar4 boxColor = make_uchar4(90,90,90,255);
-	curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(80,40, 13), 1, boxColor);
-	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(70,50,20 ), 2, boxColor);
-
-	srand((unsigned)time(NULL));
-	for (int i = 0; i<PHOTON_NUM; i++)
-	{
-		float randx = 1; 
-		float randy = 1;
-		float randz = 1;
-		while((randx * randx + randy * randy + randz*randz) > 1)
-		{
-			randx = (rand() % 10000 - 5000) / 5000.0;
-			randy = (rand() % 10000 - 5000) / 5000.0;
-			randz = (rand() % 10000 - 5000) / 5000.0;
-		}
-		//cout<<randx<<" "<<randy<<" "<<randz<<endl;
-		//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
-		//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
-		photonBuffer[i].pos = make_float3(randx, randy, randz);
-		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
-	}
-	//for(int i = 0;i<PHOTON_SQR;i++)
+	curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(20,15, 13), 1, boxColor);
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(50, 15, 13 ), 1, boxColor);
+	curTotalTriFace+= inputModel( objBox3,curTotalTriFace,make_float3(80, 15, 13 ), 1, boxColor);
+	curTotalTriFace+= inputModel( objBox4,curTotalTriFace,make_float3(40, 40, 17 ), 2, boxColor);
+	//srand((unsigned)time(NULL));
+	//for (int i = 0; i<PHOTON_NUM; i++)
 	//{
-	//	float randx;
-	//	float randy;
-	//	float randz;
-	//
+	//	float randx = 1; 
+	//	float randy = 1;
+	//	float randz = 1;
+	//	while((randx * randx + randy * randy + randz*randz) > 1)
+	//	{
+	//		randx = (rand() % 10000 - 5000) / 5000.0;
+	//		randy = (rand() % 10000 - 5000) / 5000.0;
+	//		randz = (rand() % 10000 - 5000) / 5000.0;
+	//	}
+	//	//cout<<randx<<" "<<randy<<" "<<randz<<endl;
+	//	//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
+	//	//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
 	//	photonBuffer[i].pos = make_float3(randx, randy, randz);
 	//	photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
 	//}
+	cout<<endl;
+	float total = 0;
+	for (int i = 0;i<PHOTON_SQR;i++)
+	{
+		double tha = - 90.0 + i * 120.0 / PHOTON_SQR;tha = tha / 180 * PI;
+		total += cos(tha);
+		cout<<tha<<"\t"<<i<<endl;
+	}
+	cout<<total<<endl;
+	int curindex = 0;
+	//for(int i = 0;i<PHOTON_SQR;i++)
+	//{
+	//	double tha = - 90.0 + i * 120.0 / PHOTON_SQR;tha = tha / 180 * PI;
+	//
+	//	for(int j = 0;j < (PHOTON_NUM * cos(tha) / total + 10) ;j++)
+	//	{
+	//		double the = 180.0 - j * 360.0 / (PHOTON_NUM * cos(tha) / total + 10);
+	//		the = the / 180 * PI;
+	//		float randx = cos(the) * cos(tha);
+	//		float randy = sin(the) * cos(tha);
+	//		float randz = sin(tha);
+	//
+	//		photonBuffer[curindex].pos = make_float3(randx, randy, randz);
+	//		cout<<the<<"\t"<<tha<<"\t"<<randx<<"\t"<<randy<<"\t"<<randz<<"\t"<<curindex<<endl;
+	//		photonBuffer[curindex++].power = make_uchar4(255, 255, 255, 255);
+	//		if(curindex >= PHOTON_NUM)
+	//			break;
+	//	}
+	//	if(curindex >= PHOTON_NUM)
+	//		break;
+	//}
+
+	int globalp = PHOTON_NUM/2;
+	for(int i = 0; i<globalp;i++)
+	{
+		float k = 1-(2.0*i-1)/(globalp);
+		float tha = asin(k);
+		float the = tha * sqrt(globalp * PI);
+
+		float randx = cos(the) * cos(tha);
+		float randy = sin(the) * cos(tha);
+		float randz = sin(tha);
+
+		photonBuffer[i].pos = make_float3(randx, randy, randz);
+		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
+	}
+	int directionp =  PHOTON_NUM/2 ;
+	for(int i = 0;i<directionp;i++)
+	{
+
+		float k = 1-(2.0*i-1)/(directionp*3);
+		float tha = asin(k);
+		float the = tha * sqrt((directionp*3) * PI);
+
+		float randx = cos(the) * cos(tha);
+		float randy = sin(the) * cos(tha);
+		float randz = -sin(tha);
+		//randz = randz > 0?-randz:randz;
+
+		photonBuffer[i + globalp].pos = make_float3(randx, randy, randz);
+		photonBuffer[i + globalp].power = make_uchar4(255, 255, 255, 255);
+	}
 
 	cudaMemcpy(objects_CUDA, objects, size * sizeof(Object), cudaMemcpyHostToDevice);
 

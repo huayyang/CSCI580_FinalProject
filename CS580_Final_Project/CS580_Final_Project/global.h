@@ -17,13 +17,14 @@
 
 #pragma comment(lib, "glew32.lib")
 
-#define PHOTON_NUM 3600
-#define PHOTON_SQR 60
-#define PHOTON_RADIUS 30
-#define PHOTON_FORCE 100
+#define PHOTON_NUM 6400
+#define PHOTON_SQR 80
+#define PHOTON_RADIUS 50
+#define PHOTON_FORCE 25
+#define ADD_FORCE 1000
 #define PHOTON_ANGLE 1.0
 #define PHOTON_DIFFUSE_RATE 1
-#define PHOTON_SHOW true
+#define PHOTON_SHOW false
 
 extern GLuint screenBufferPBO;
 extern GLuint screenTexture2D;

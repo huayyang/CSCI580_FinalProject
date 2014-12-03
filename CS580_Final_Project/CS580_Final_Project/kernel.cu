@@ -599,13 +599,34 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			}
 			avg /= PHOTON_RADIUS;
 
+			float3 lit_dir = make_float3(50 - kdHit.x, 50 - kdHit.y, 70 - kdHit.z);
+			float3 nlit = normalize(lit_dir);
+			float3 newHit;
+			KDTriangle newhitTriangle;
+			newhitTriangle.index = -1;
+			float newdis = MAX_DIS;
+			bool newisFront = true;
 
+			KDTreeHit(0, objects, kdHit, nlit, &newHit, &newhitTriangle, &newdis, KDTree_GPU, TriangleIndexArray_GPU, &newisFront, index);
+	
+			float add_force = dotProduct( lit_dir, lit_dir);
+			//printf("%.3f, %.3f, %d\n", add_force, newdis, newhitTriangle.index);
+
+			if(newdis*newdis < add_force )
+			{
+				//add_force /= (newdis*newdis/add_force);
+				//printf("%.3f, %.3f\n", add_force, newdis);
+				
+				//avg *= 2;
+			}
+
+			
 			if (!PHOTON_SHOW || nearestDis > 0.2)
 			{
 				int3 colorInt;
-				colorInt.x = resultColor.x + Kd * objects[index].color[0].x / avg * PHOTON_FORCE ;
-				colorInt.y = resultColor.y + Kd * objects[index].color[1].y / avg * PHOTON_FORCE ;
-				colorInt.z = resultColor.z + Kd * objects[index].color[2].z / avg * PHOTON_FORCE ;
+				colorInt.x = resultColor.x + Kd * objects[index].color[0].x * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
+				colorInt.y = resultColor.y + Kd * objects[index].color[1].y * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
+				colorInt.z = resultColor.z + Kd * objects[index].color[2].z * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
 				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x; 
 				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
@@ -777,6 +798,7 @@ __global__ void CastPhoton(uchar4 * pixels, int count, Object* objects, Photon* 
 	dir.x = photons[i * PHOTON_SQR + j].pos.x;
 	dir.y = photons[i * PHOTON_SQR + j].pos.y;
 	dir.z = photons[i * PHOTON_SQR + j].pos.z;
+	//printf("%d, %d, (%.2f, %.2f, %.2f), \n", i, j, dir.x, dir.y, dir.z);
 	//dir.z = -1 * PHOTON_ANGLE;
 	photons[i * PHOTON_SQR + j].pos.x = photons[i * PHOTON_SQR + j].pos.y = photons[i * PHOTON_SQR + j].pos.z = -100;
 	dir = normalize(dir);
@@ -787,6 +809,8 @@ __global__ void CastPhoton(uchar4 * pixels, int count, Object* objects, Photon* 
 	bool isFront = true;
 	float3 hitPos;
 	float3 hitStart = lightPos;
+	if(PHOTON_NUM/4 > i * PHOTON_SQR + j)
+		hitStart.z = 50;
 	KDTriangle hitTriangle; 
 	int loopcount = 0;
 
