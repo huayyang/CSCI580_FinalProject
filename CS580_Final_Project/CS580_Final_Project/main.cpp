@@ -182,7 +182,7 @@ void initMaterials()
 
 	materialBuffer[2].Kd = 0.0f;
 	materialBuffer[2].Ks = 0.0f;
-	materialBuffer[2].Kni = 1.5f;
+	materialBuffer[2].Kni = 1.1f;
 	materialBuffer[2].Ni = 1.5f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
@@ -230,8 +230,9 @@ void readFile()  // currently i s premade
 {
 	//totalNum =  10+4968;
 	//totalNum = 22 + 4968;
-	totalNum = 772 * 4;
+	totalNum = 772;
 	//totalNum = 10 + 871168;
+	//totalNum = 12;
 	size_t size = totalNum;
 	objects = (Object*)malloc(size * sizeof(Object));
 	memset(objects, 0, size * sizeof(Object));
@@ -250,17 +251,17 @@ void readFile()  // currently i s premade
 	ObjInfo objBox3;
 	ObjInfo objBox4;
 	//objBox.readObj("dragon.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
-	objBox.readObj("sphere20.obj");
-	objBox2.readObj("sphere20.obj");
-	objBox3.readObj("sphere20.obj");
+	//objBox.readObj("sphere20.obj");
+	//objBox2.readObj("sphere20.obj");
+	//objBox3.readObj("sphere20.obj");
 	objBox4.readObj("sphere20.obj");
 	int curTotalTriFace = initCornellBox();
 	
 	uchar4 boxColor = make_uchar4(90,90,90,255);
-	curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(20,15, 13), 1, boxColor);
-	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(50, 15, 13 ), 1, boxColor);
-	curTotalTriFace+= inputModel( objBox3,curTotalTriFace,make_float3(80, 15, 13 ), 1, boxColor);
-	curTotalTriFace+= inputModel( objBox4,curTotalTriFace,make_float3(40, 40, 17 ), 2, boxColor);
+	//curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(20,15, 13), 1, boxColor);
+	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(50, 15, 13 ), 1, boxColor);
+	//curTotalTriFace+= inputModel( objBox3,curTotalTriFace,make_float3(80, 15, 13 ), 1, boxColor);
+	curTotalTriFace+= inputModel( objBox4,curTotalTriFace,make_float3(20, 40, 20 ), 2, boxColor);
 	//srand((unsigned)time(NULL));
 	//for (int i = 0; i<PHOTON_NUM; i++)
 	//{
@@ -276,6 +277,12 @@ void readFile()  // currently i s premade
 	//	//cout<<randx<<" "<<randy<<" "<<randz<<endl;
 	//	//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
 	//	//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
+	//	
+	//	if(randz > -0.3)
+	//	{
+	//		i--;
+	//		continue;
+	//	}
 	//	photonBuffer[i].pos = make_float3(randx, randy, randz);
 	//	photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
 	//}

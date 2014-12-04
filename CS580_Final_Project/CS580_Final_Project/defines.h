@@ -6,11 +6,11 @@
 #define PI 3.14159265358979323846
 #define MAX_DIS 1000000
 
-#define UNIT_X 128
-#define UNIT_Y 128
+#define UNIT_X 64
+#define UNIT_Y 64
 
-static int SCR_WIDTH = 800;
-static int SCR_HEIGHT = 800;
+static int SCR_WIDTH = 512;
+static int SCR_HEIGHT = 512;
 //static float3 CAM_POS = make_float3(10,100,50);
 //static float3 CAM_LOOKAT = make_float3(0,-1,0);
 //static float3 CAM_LOOKUP = make_float3(0,0,1);

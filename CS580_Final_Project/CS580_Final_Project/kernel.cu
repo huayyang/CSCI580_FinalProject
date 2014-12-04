@@ -286,6 +286,7 @@ __device__ bool getR(float3* outdir, float ni, float3 I, float3 N)
 	outdir->y = biNormal.y * sinR - N.y * cosR;
 	outdir->z = biNormal.z * sinR - N.z * cosR;
 
+	*outdir = normalize(*outdir);
 	//float tmp = dotProduct(N,crossProduct(I,*outdir));
 	//if (tmp < -0.001 || tmp > 0.001)
 	//	printf("%f ..%f... %f,%f,%f......%f,%f,%f......%f,%f,%f\n",ni,tmp,N.x,N.y,N.z,I.x,I.y,I.z,outdir->x,outdir->y,outdir->z);
@@ -443,9 +444,13 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	int KDIndex = -1;
 	float3 kdHit;
 
+	float3 hitPointNormal;
+	uchar4 hitPointColor;
+	uchar1 hitPointMaterialIndex;
+
 	hitTriangle.index = -1;
 
-	KDTreeHit(0, objects, pos, dir, &kdHit, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	allHit(0, objects, pos, dir, &kdHit, &hitTriangle, &dis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex,&hitPointNormal,&hitPointColor,&hitPointMaterialIndex);
 	//KDTreeHit(0, objects, pos, dir, &hitpoint, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
 	//printf("Hit Pos: (%f,%f,%f) Hit Dis: (%f,%f,%f)\n", pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
 	KDIndex = hitTriangle.index;
@@ -461,102 +466,16 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 	hitpoint = kdHit;
 	minDis = dis;
 	//isFront = kdIsFront;
-	isFront = true;
+	//isFront = true;
 
 	if (index != -1)
 	{
-		Material hitMat = materials[(int)(objects[index].materialIndex.x)];
+		Material hitMat = materials[(int)(hitPointMaterialIndex.x)];
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
 		float Kni = hitMat.Kni;
 		if (Kd > eps && isFront)
 		{
-			//int radius = PHOTON_RADIUS;
-			////float kdDistance[PHOTON_RADIUS] = { 0 };
-			////float distances[PHOTON_NUM] = { 0 };
-			//int searched[PHOTON_NUM] = { -1 };
-			//Photon pDistance[PHOTON_NUM] = { 0 };
-			//float3 near;
-			//float nearestDis = -1;
-			//
-			//int index_i = blockIdx.x;
-			//int index_j = threadIdx.x;
-			//pqtop[index_i*UNIT_Y + index_j] = 0;
-			//bool found = false;
-			//KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, hitpoint, &near, nearestDis, pDistance, radius, searched, index_i, index_j, pqtop);
-			////printf("Hit Point: (%f,%f,%f)\n", hitpoint.x, hitpoint.y, hitpoint.z);
-			////nearestDis = KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, hitpoint, distance, radius, &near);
-			////nearestDis = KDTreeKNNSearch(KDNodePhotonArrayTree_GPU, 0, KDPhotonArray_GPU, hitpoint, distance, 0, radius, &near);
-			////distance[radius-1] = near;
-			//float fardis = 0;
-			//float fardis2 = 0;
-			//for (int k = 0; k < radius; k++)
-			//{
-			//	float tempdis = (GetDistanceSquare(pDistance[k].pos, hitpoint));
-			//	if (fardis < tempdis)
-			//	{
-			//		fardis = tempdis;
-			//	}
-			//	fardis2 = tempdis + fardis2*k;
-			//	fardis2 /= (k+1);
-
-			//}
-			//bool notEq = false;
-			//float bf_min1 = INT_MAX;
-			//float bf_min2 = INT_MAX;
-			//float bf_min3 = INT_MAX;
-			//for (int k = 0; k < PHOTON_NUM; k++)
-			//{
-			//	float3 temp;
-			//	temp.x = hitpoint.x - photons[k].pos.x;
-			//	temp.y = hitpoint.y - photons[k].pos.y;
-			//	temp.z = hitpoint.z - photons[k].pos.z;
-			//	float dis = dotProduct(temp, temp);
-			//	if (dis < 0.1)
-			//	{
-			//		found = true;
-			//		break;
-			//	}
-			//}
-			//	/*if (abs(fardis - dis) < eps)
-			//	{
-			//		notEq = true;
-			//	}
-			//	if (dis < bf_min1)
-			//	{
-			//		bf_min3 = bf_min2;
-			//		bf_min2 = bf_min1;
-			//		bf_min1 = dis;
-			//	}
-			//	else if (dis < bf_min2 && abs(bf_min1 - bf_min2) > eps)
-			//	{
-			//		bf_min3 = bf_min2;
-			//		bf_min2 = dis;
-			//	}
-			//	else if (dis < bf_min3 && abs(bf_min1 - bf_min3) > eps && abs(bf_min2 - bf_min3) > eps)
-			//		bf_min3 = dis;*/
-			//}
-			//if (!notEq)printf("Not In!\n");
-			//
-			//if (abs(bf_min3 - fardis) > eps)
-			//{
-			//	printf("Not Equal! %.2f, %.2f\n", bf_min3, fardis2);
-
-			//	printf("Pos (%f,%f,%f)\n", hitpoint.x, hitpoint.y, hitpoint.z);
-			//	printf("\n");
-			//	//printf("KD Result: (%f)\n", minDis);
-			//	printf("\n");
-			//	for (int i = 0; i < radius; ++i)
-			//	{
-			//		printf("KD Result: (%f)\n", kdDistance[i]);
-			//	}
-			//	printf("\n");
-			//	for (int i = 0; i < PHOTON_NUM; ++i)
-			//	{
-			//		printf("BF Result: (%f)\n", distances[i]);
-			//	}
-			//}
-			//
 
 			float nearestDis = INT_MAX;
 			float distances[PHOTON_RADIUS] = { 0 };
@@ -607,7 +526,11 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			float newdis = MAX_DIS;
 			bool newisFront = true;
 
-			KDTreeHit(0, objects, kdHit, nlit, &newHit, &newhitTriangle, &newdis, KDTree_GPU, TriangleIndexArray_GPU, &newisFront, index);
+			float3 newHitPointNormal;
+			uchar4 newHitPointColor;
+			uchar1 newHitPointMaterialIndex;
+
+			allHit(0, objects, kdHit, nlit, &newHit, &newhitTriangle, &newdis, KDTree_GPU, TriangleIndexArray_GPU, &newisFront, index,&newHitPointNormal,&newHitPointColor,&newHitPointMaterialIndex);
 	
 			float add_force = dotProduct( lit_dir, lit_dir);
 			//printf("%.3f, %.3f, %d\n", add_force, newdis, newhitTriangle.index);
@@ -624,9 +547,9 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 			if (!PHOTON_SHOW || nearestDis > 0.2)
 			{
 				int3 colorInt;
-				colorInt.x = resultColor.x + Kd * objects[index].color[0].x * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
-				colorInt.y = resultColor.y + Kd * objects[index].color[1].y * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
-				colorInt.z = resultColor.z + Kd * objects[index].color[2].z * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
+				colorInt.x = resultColor.x + Kd * hitPointColor.x * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
+				colorInt.y = resultColor.y + Kd * hitPointColor.y * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
+				colorInt.z = resultColor.z + Kd * hitPointColor.z * ( PHOTON_FORCE / avg  + ADD_FORCE/add_force) ;
 				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x; 
 				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
@@ -644,38 +567,22 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 
 		if (Kni > 0.001)
 		{
-			float3 edge1, edge2, realN;
-			edge1.x = objects[index].vertex[1].x - objects[index].vertex[0].x;
-			edge1.y = objects[index].vertex[1].y - objects[index].vertex[0].y;
-			edge1.z = objects[index].vertex[1].z - objects[index].vertex[0].z;
-
-			edge2.x = objects[index].vertex[2].x - objects[index].vertex[0].x;
-			edge2.y = objects[index].vertex[2].y - objects[index].vertex[0].y;
-			edge2.z = objects[index].vertex[2].z - objects[index].vertex[0].z;
-
-			realN = normalize(crossProduct(edge1, edge2));
-
 
 			float Ni = hitMat.Ni;
-
-			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
-			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
-			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
-			lerpNormal = normalize(lerpNormal);
 
 			float3 outDir;
 			float3 n;
 			if (isFront)
 			{
-				n.x = lerpNormal.x;
-				n.y = lerpNormal.y;
-				n.z = lerpNormal.z;
+				n.x = hitPointNormal.x;
+				n.y = hitPointNormal.y;
+				n.z = hitPointNormal.z;
 			}
 			else
 			{
-				n.x = -lerpNormal.x;
-				n.y = -lerpNormal.y;
-				n.z = -lerpNormal.z;
+				n.x = -hitPointNormal.x;
+				n.y = -hitPointNormal.y;
+				n.z = -hitPointNormal.z;
 				Ni = 1/Ni;
 			}
 
@@ -695,18 +602,6 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 				resultColor.x = colorInt.x > 255 ? 255 : colorInt.x;
 				resultColor.y = colorInt.y > 255 ? 255 : colorInt.y;
 				resultColor.z = colorInt.z > 255 ? 255 : colorInt.z;
-				//{
-				//	float maxcolor = colorInt.x;
-				//	maxcolor = colorInt.y > maxcolor ? colorInt.y : maxcolor;
-				//	maxcolor = colorInt.z > maxcolor ? colorInt.z : maxcolor;
-				//	if(maxcolor > 255)
-				//	{
-				//		float3 resultcolor = normalize(make_float3(colorInt.x, colorInt.y, colorInt.z));
-				//		resultColor.x = 255*resultcolor.x;
-				//		resultColor.y = 255*resultcolor.y;
-				//		resultColor.z = 255*resultcolor.z;
-				//	}
-				//}
 			}
 
 		}
@@ -714,12 +609,8 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 		if ( (Ks + tF) > 0.001)
 		{
 			//yating create lerp
-			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
-			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
-			float3 lerpNormal = lerp(index,curVex,curFNormal, hitpoint);
-			lerpNormal = normalize(lerpNormal);
 
-			float NdotDir = -dotProduct(lerpNormal, dir);
+			float NdotDir = -dotProduct(hitPointNormal, dir);
 
 
 			if(NdotDir < 0 && isFront)
@@ -736,14 +627,14 @@ __device__ uchar4 getColor(int depth, int currentIndex, uchar4 * pixels, int cou
 				if(NdotDir < 0)
 				{
 					NdotDir = -NdotDir;
-					lerpNormal.x  = -lerpNormal.x ;
-					lerpNormal.y  = -lerpNormal.y ;
-					lerpNormal.z  = -lerpNormal.z ;
+					hitPointNormal.x  = -hitPointNormal.x ;
+					hitPointNormal.y  = -hitPointNormal.y ;
+					hitPointNormal.z  = -hitPointNormal.z ;
 				}
 				float3 reflectDir;
-				reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
-				reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
-				reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
+				reflectDir.x =hitPointNormal.x * 2 * NdotDir + dir.x;
+				reflectDir.y =hitPointNormal.y * 2 * NdotDir + dir.y;
+				reflectDir.z =hitPointNormal.z * 2 * NdotDir + dir.z;
 
 				uchar4 speculateColor = getColor(depth + 1, index, pixels, count, objects, materials, hitpoint, reflectDir, photons, KDTree_GPU, TriangleIndexArray_GPU, KDNodePhotonArrayTree_GPU, pqtop);
 			
@@ -798,7 +689,6 @@ __global__ void CastPhoton(uchar4 * pixels, int count, Object* objects, Photon* 
 	dir.x = photons[i * PHOTON_SQR + j].pos.x;
 	dir.y = photons[i * PHOTON_SQR + j].pos.y;
 	dir.z = photons[i * PHOTON_SQR + j].pos.z;
-	//printf("%d, %d, (%.2f, %.2f, %.2f), \n", i, j, dir.x, dir.y, dir.z);
 	//dir.z = -1 * PHOTON_ANGLE;
 	photons[i * PHOTON_SQR + j].pos.x = photons[i * PHOTON_SQR + j].pos.y = photons[i * PHOTON_SQR + j].pos.z = -100;
 	dir = normalize(dir);
@@ -809,8 +699,8 @@ __global__ void CastPhoton(uchar4 * pixels, int count, Object* objects, Photon* 
 	bool isFront = true;
 	float3 hitPos;
 	float3 hitStart = lightPos;
-	if(PHOTON_NUM/4 > i * PHOTON_SQR + j)
-		hitStart.z = 50;
+	//if(PHOTON_NUM/4 > i * PHOTON_SQR + j)
+	//	hitStart.z = 50;
 	KDTriangle hitTriangle; 
 	int loopcount = 0;
 
@@ -828,14 +718,17 @@ PHOTON_CAST:
 		goto END_CAST;
 	}
 
-	KDTreeHit(0, objects, hitStart, dir, &hitPos, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex);
+	float3 hitPointNormal;
+	uchar4 hitPointColor;
+	uchar1 hitPointMaterialIndex;
+
+	allHit(0, objects, hitStart, dir, &hitPos, &hitTriangle, &minDis, KDTree_GPU, TriangleIndexArray_GPU, &isFront, currentIndex,&hitPointNormal,&hitPointColor,&hitPointMaterialIndex);
 
 	index = hitTriangle.index;
-
 	if (index != -1)
 	{
 
-		Material hitMat = materials[(int)(objects[index].materialIndex.x)];
+		Material hitMat = materials[(int)(hitPointMaterialIndex.x)];
 		float Kd = hitMat.Kd;
 		float Ks = hitMat.Ks;
 		float Kni = hitMat.Kni;
@@ -844,7 +737,7 @@ PHOTON_CAST:
 			if( IntegerNoise(i*j + dir.x* 50 + dir.y * 30 + dir.z * 10) > PHOTON_DIFFUSE_RATE)
 			{
 				float3 newDir = make_float3(IntegerNoise(i*j + dir.x* 10 + dir.y * 30 + dir.z * 50), IntegerNoise(i*j + dir.x* 50 + dir.y * 30 + dir.z * 10), IntegerNoise(i*j + dir.x* 200 + dir.y * 30 + dir.z * 10));
-				if(dotProduct(newDir, objects[index].normal[0]) > 0)
+				if(dotProduct(newDir, hitPointNormal) > 0)
 				{
 					dir = normalize(newDir);
 					hitStart = hitPos;
@@ -863,6 +756,7 @@ PHOTON_CAST:
 			else
 			{
 				photons[i*PHOTON_SQR + j].pos = hitPos;
+				printf("photon %d, %d, hit, %.3f, %.3f, %.3f \n", i, j, hitPos.x, hitPos.y, hitPos.z);
 				photons[i * PHOTON_SQR + j].power.x = 255;
 				photons[i * PHOTON_SQR + j].power.y = 255;
 				photons[i * PHOTON_SQR + j].power.z = 255;
@@ -870,38 +764,21 @@ PHOTON_CAST:
 		}
 		if (Kni > 0.5)
 		{
-			float3 edge1, edge2, realN;
-			edge1.x = objects[index].vertex[1].x - objects[index].vertex[0].x;
-			edge1.y = objects[index].vertex[1].y - objects[index].vertex[0].y;
-			edge1.z = objects[index].vertex[1].z - objects[index].vertex[0].z;
-
-			edge2.x = objects[index].vertex[2].x - objects[index].vertex[0].x;
-			edge2.y = objects[index].vertex[2].y - objects[index].vertex[0].y;
-			edge2.z = objects[index].vertex[2].z - objects[index].vertex[0].z;
-
-			realN = normalize(crossProduct(edge1, edge2));
-
-
 			float Ni = hitMat.Ni;
-
-			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
-			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
-			float3 lerpNormal = lerp(index,curVex,curFNormal, hitPos);
-			lerpNormal = normalize(lerpNormal);
 
 			float3 outDir;
 			float3 n;
 			if (isFront)
 			{
-				n.x = lerpNormal.x;
-				n.y = lerpNormal.y;
-				n.z = lerpNormal.z;
+				n.x = hitPointNormal.x;
+				n.y = hitPointNormal.y;
+				n.z = hitPointNormal.z;
 			}
 			else
 			{
-				n.x = -lerpNormal.x;
-				n.y = -lerpNormal.y;
-				n.z = -lerpNormal.z;
+				n.x = -hitPointNormal.x;
+				n.y = -hitPointNormal.y;
+				n.z = -hitPointNormal.z;
 				Ni = 1/Ni;
 			}
 
@@ -913,27 +790,23 @@ PHOTON_CAST:
 			{
 				dir = normalize(outDir);
 				hitStart = hitPos;
+				currentIndex = index;
 				goto PHOTON_CAST;
 			}
 
 		}
 		if (Ks > 0.5)
 		{
-			float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
-			float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
-			float3 lerpNormal = lerp(index,curVex,curFNormal, hitPos);
-			lerpNormal = normalize(lerpNormal);
-
-			float NdotDir = -dotProduct(lerpNormal, dir);
+			float NdotDir = -dotProduct(hitPointNormal, dir);
 			float3 reflectDir;
-			reflectDir.x =lerpNormal.x * 2 * NdotDir + dir.x;
-			reflectDir.y =lerpNormal.y * 2 * NdotDir + dir.y;
-			reflectDir.z =lerpNormal.z * 2 * NdotDir + dir.z;
+			reflectDir.x =hitPointNormal.x * 2 * NdotDir + dir.x;
+			reflectDir.y =hitPointNormal.y * 2 * NdotDir + dir.y;
+			reflectDir.z =hitPointNormal.z * 2 * NdotDir + dir.z;
 
 			if(i == 14 && j == 8 && NdotDir < 0)
 			{
 				printf("wrong dir %d, %d(%d, %d), (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f) = %.2f  ???\n", 
-				loopcount, index ,i,j, dir.x, dir.y, dir.z, lerpNormal.x, lerpNormal.y, lerpNormal.z, NdotDir);
+				loopcount, index ,i,j, dir.x, dir.y, dir.z, hitPointNormal.x, hitPointNormal.y, hitPointNormal.z, NdotDir);
 				hitStart = hitPos;
 				currentIndex = index;
 				goto PHOTON_CAST;
@@ -1301,6 +1174,93 @@ __device__ bool LineAABBIntersection(const BoundingBox& aabbBox, const float3& v
 	flFraction = f_low;
 
 	return true;
+}
+
+__device__ bool ballHit(int currentIndex,float3 pos, float3 dir,float3* hitPos, float3* normal, uchar4* color, uchar1* materialIndex, bool* isFront,float * hitDis)
+{
+	float3 ballPos = make_float3(BALL_POS_X,BALL_POS_Y,BALL_POS_Z);
+	float r = BALL_R;
+	color->x = BALL_COLOR_R;
+	color->y = BALL_COLOR_G;
+	color->z = BALL_COLOR_B;
+	color->w = BALL_COLOR_A;
+
+	materialIndex->x = BALL_MAT;
+
+	float3 centerDir = ballPos - pos;
+	float projected = dotProduct(centerDir,dir);
+	if (projected < eps)
+		return false;
+	//printf("%d\n",currentIndex);
+	if (currentIndex == -2)
+	{
+		*isFront = false;
+	}
+	else 
+		*isFront = true;
+
+	float3 vertical = make_float3(projected * dir.x,projected * dir.y,projected * dir.z) - centerDir; 
+
+	float value = r * r - dotProduct(vertical,vertical);
+	if (value < 0)
+		return false;
+	float weight = sqrt(value);
+	if (*isFront)
+		weight = - weight;
+	*hitPos = ballPos + vertical + make_float3(weight * dir.x,weight * dir.y,weight * dir.z);
+
+	*normal = normalize(*hitPos - ballPos);
+
+	float3 vec = *hitPos - pos;
+	*hitDis = sqrt(dotProduct(vec,vec));
+	//printf("hitPos : %f...%f...%f...and pos : %f...%f...%f...\n",hitPos->x,hitPos->y,hitPos->z,pos.x,pos.y,pos.z);
+	return true;
+}
+
+__device__ bool allHit(int cur_node, Object* objects, float3 pos, float3 dir, float3* hitPos, KDTriangle* hitTriangle, float* tmin, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, bool* isFront, int currentIndex,float3* normal,uchar4* color, uchar1* materialIndex)
+{
+	bool treeHit = KDTreeHit(cur_node,objects,pos,dir,hitPos,hitTriangle,tmin,KDTree_GPU,TriangleIndexArray_GPU,isFront,currentIndex);
+
+	int index = hitTriangle->index;
+	if (index != -1)
+	{
+		float3 curVex[3] = { objects[index].vertex[0], objects[index].vertex[1], objects[index].vertex[2] };
+		float3 curFNormal[3] = { objects[index].normal[0], objects[index].normal[1], objects[index].normal[2] };
+		float3 lerpNormal = lerp(index,curVex,curFNormal, *hitPos);
+		*normal = normalize(lerpNormal);
+		color->x = objects[index].color[0].x;
+		color->y = objects[index].color[0].y;
+		color->z = objects[index].color[0].z;
+		color->w = objects[index].color[0].w;
+		materialIndex->x = objects[index].materialIndex.x;
+	}
+	bool isBallHit = false;
+	if (BALL_SHOW)
+	{
+		float3 ballHitPos;
+		float ballHitDis = MAX_DIS;
+		float3 ballHitNormal;
+		uchar4 ballHitColor;
+		uchar1 ballHitMaterialIndex;
+		bool isBallFront;
+		isBallHit = ballHit(currentIndex,pos, dir,&ballHitPos, &ballHitNormal, &ballHitColor, &ballHitMaterialIndex, &isBallFront,&ballHitDis);
+	
+		if (ballHitDis < *tmin && isBallHit)
+		{
+			hitTriangle->index = -2;
+			*tmin = ballHitDis;
+			*hitPos = ballHitPos;
+			*normal = ballHitNormal;
+			materialIndex->x = ballHitMaterialIndex.x;
+			*isFront = isBallFront;
+			color->x = ballHitColor.x;
+			color->y = ballHitColor.y;
+			color->z = ballHitColor.z;
+			color->w = ballHitColor.w;
+		}
+	}
+
+	return treeHit || isBallHit;
 }
 
 __device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir, float3* hitPos, KDTriangle* hitTriangle, float* tmin, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, bool* isFront, int currentIndex)

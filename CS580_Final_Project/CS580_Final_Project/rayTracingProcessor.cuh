@@ -14,6 +14,8 @@
 __device__ bool ClipLine(int d, const BoundingBox& aabbBox, const float3& v0, const float3& v1, float& f_low, float& f_high);
 __device__ bool LineAABBIntersection(const BoundingBox& aabbBox, const float3& v0, const float3& dir, float3& vecIntersection, float& flFraction);
 __device__ bool KDTreeHit(int cur_node, Object* objects, float3 pos, float3 dir, float3* hitPos, KDTriangle* hitTriangle, float* tmin, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, bool* isFront, int currentIndex);
+__device__ bool allHit(int cur_node, Object* objects, float3 pos, float3 dir, float3* hitPos, KDTriangle* hitTriangle, float* tmin, KDNode_CUDA * KDTree_GPU, int* TriangleIndexArray_GPU, bool* isFront, int currentIndex,float3* normal,uchar4* color, uchar1* materialIndex);
+__device__ bool ballHit(int currentIndex,float3 pos, float3 dir,float3* hitPos, float3* normal, uchar4* color, uchar1* materialIndex, bool* isFront,float * hitDis);
 
 __device__ bool CheckAlreadAdded(KDNode_Photon_GPU* close_set, int top, KDNode_Photon_GPU* node);
 //__device__ float KDTreeKNNSearch(KDNode_Photon_GPU* KDNodePhotonArrayTree_GPU, int cur, float3 target, float3* distance, int rad, float3* near);
