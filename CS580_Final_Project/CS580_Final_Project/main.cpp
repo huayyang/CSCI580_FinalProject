@@ -117,12 +117,12 @@ int initCornellBox()
 	objects[3].color[1] = make_uchar4(0, g, 0, a);
 	objects[3].color[2] = make_uchar4(0, g, 0, a);
 
-	objects[4].color[0] = make_uchar4(r, g, 0, a);
-	objects[4].color[1] = make_uchar4(r, g, 0, a);
-	objects[4].color[2] = make_uchar4(r, g, 0, a);
-	objects[5].color[0] = make_uchar4(r, g, 0, a);
-	objects[5].color[1] = make_uchar4(r, g, 0, a);
-	objects[5].color[2] = make_uchar4(r, g, 0, a);
+	objects[4].color[0] = make_uchar4(100,100,100, a);
+	objects[4].color[1] = make_uchar4(100,100,100, a);
+	objects[4].color[2] = make_uchar4(100,100,100, a);
+	objects[5].color[0] = make_uchar4(100,100,100, a);
+	objects[5].color[1] = make_uchar4(100,100,100, a);
+	objects[5].color[2] = make_uchar4(100,100,100, a);
 
 	objects[6].color[0] = make_uchar4(r, 0, b, a);
 	objects[6].color[1] = make_uchar4(r, 0, b, a);
@@ -165,7 +165,7 @@ int initCornellBox()
 
 void initMaterials()
 {
-	int materialNum = 3;
+	int materialNum = 4;
 	materialBuffer = (Material*)malloc(materialNum * sizeof(Material));
 	memset(materialBuffer, 0, materialNum * sizeof(Material));
 	cudaMalloc((void**)&materialBuffer_CUDA, materialNum * sizeof(Material));
@@ -175,15 +175,20 @@ void initMaterials()
 	materialBuffer[0].Kni = 0.0f;
 	materialBuffer[0].Ni = 1.0f;
 
-	materialBuffer[1].Kd = 0.0f;
-	materialBuffer[1].Ks = 1.0f;
+	materialBuffer[1].Kd = 0.1f;
+	materialBuffer[1].Ks = 0.9f;
 	materialBuffer[1].Kni = 0.0f;
 	materialBuffer[1].Ni = 1.00f;
 
 	materialBuffer[2].Kd = 0.0f;
-	materialBuffer[2].Ks = 0.0f;
-	materialBuffer[2].Kni = 1.1f;
+	materialBuffer[2].Ks = 0.1f;
+	materialBuffer[2].Kni = 0.9f;
 	materialBuffer[2].Ni = 1.5f;
+
+	materialBuffer[3].Kd = 0.1f;
+	materialBuffer[3].Ks = 0.2f;
+	materialBuffer[3].Kni = 0.7f;
+	materialBuffer[3].Ni = 1.3f;
 
 	cudaMemcpy(materialBuffer_CUDA, materialBuffer, materialNum * sizeof(Material), cudaMemcpyHostToDevice);
 }
@@ -200,7 +205,7 @@ float3 float3Plusfloat3(float3 a, float3 b)
 
 
 //yating
-int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex, uchar4 objColors)
+int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex, uchar4 objColors, bool isWater = false)
 {
 	int faceOrder = existFaceNum;
 	int faceSize = obj.f.size();
@@ -221,6 +226,18 @@ int inputModel(ObjInfo obj, int existFaceNum, float3 offset, int materialIndex, 
 		objects[faceOrder].color[2] = objColors;
 
 		objects[faceOrder].materialIndex = make_uchar1(materialIndex);
+
+
+		if(isWater){
+
+			if(objects[faceOrder].normal[0].y == 1 || objects[faceOrder].normal[1].y == 1 || objects[faceOrder].normal[2].y == 1 )
+			{
+				objects[faceOrder].normal[0] = objects[faceOrder].normal[1] = objects[faceOrder].normal[2] = make_float3(0,1,0);
+			}
+
+		}
+
+
 		faceOrder++;
 	}
 	return  faceSize;
@@ -230,8 +247,8 @@ void readFile()  // currently i s premade
 {
 	//totalNum =  10+4968;
 	//totalNum = 22 + 4968;
-	totalNum = 772;
-	//totalNum = 10 + 871168;
+	totalNum = 772 + 4900 + 69666 + 871168;
+	//totalNum = 12 + 871168;
 	//totalNum = 12;
 	size_t size = totalNum;
 	objects = (Object*)malloc(size * sizeof(Object));
@@ -247,111 +264,102 @@ void readFile()  // currently i s premade
 
 	//yating edit
 	ObjInfo objBox;
+	ObjInfo objBox1;
 	ObjInfo objBox2;
 	ObjInfo objBox3;
-	ObjInfo objBox4;
-	//objBox.readObj("dragon.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
-	//objBox.readObj("sphere20.obj");
-	//objBox2.readObj("sphere20.obj");
-	//objBox3.readObj("sphere20.obj");
-	objBox4.readObj("sphere20.obj");
+	objBox.readObj("dragon15.obj"); //sphere: "sphere10.obj"  "sphere20.obj"  rab.obj
+	objBox1.readObj("bunny69666.obj");
+	objBox2.readObj("sphere20.obj");
+	objBox3.readObj("water4900.obj");
 	int curTotalTriFace = initCornellBox();
 	
-	uchar4 boxColor = make_uchar4(90,90,90,255);
-	//curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(20,15, 13), 1, boxColor);
-	//curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(50, 15, 13 ), 1, boxColor);
-	//curTotalTriFace+= inputModel( objBox3,curTotalTriFace,make_float3(80, 15, 13 ), 1, boxColor);
-	curTotalTriFace+= inputModel( objBox4,curTotalTriFace,make_float3(20, 40, 20 ), 2, boxColor);
-	//srand((unsigned)time(NULL));
-	//for (int i = 0; i<PHOTON_NUM; i++)
+	// dragon
+	uchar4 boxColor = make_uchar4(0,150,50,255);
+	curTotalTriFace+= inputModel( objBox,curTotalTriFace,make_float3(20, 60, 10), 1, boxColor);
+
+	// rabit
+	boxColor = make_uchar4(150,50,50,255);
+	curTotalTriFace+= inputModel( objBox1,curTotalTriFace,make_float3(50, 30, 5), 1, boxColor);
+
+	// sphere
+	boxColor = make_uchar4(150,150,150,255);
+	curTotalTriFace+= inputModel( objBox2,curTotalTriFace,make_float3(70, 65, 10 ), 1, boxColor);
+
+
+	uchar4 boxColor3 = make_uchar4(0,50,150,255);
+	curTotalTriFace+= inputModel( objBox3,curTotalTriFace,make_float3(50, 10, 0 ), 3, boxColor3, true);
+	cout<<curTotalTriFace<<endl;
+
+	//if(PHOTON_RANDOM)
 	//{
-	//	float randx = 1; 
-	//	float randy = 1;
-	//	float randz = 1;
-	//	while((randx * randx + randy * randy + randz*randz) > 1)
+	//	srand((unsigned)time(NULL));
+	//	for (int i = 0; i<PHOTON_NUM; i++)
 	//	{
-	//		randx = (rand() % 10000 - 5000) / 5000.0;
-	//		randy = (rand() % 10000 - 5000) / 5000.0;
-	//		randz = (rand() % 10000 - 5000) / 5000.0;
-	//	}
-	//	//cout<<randx<<" "<<randy<<" "<<randz<<endl;
-	//	//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
-	//	//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
-	//	
-	//	if(randz > -0.3)
-	//	{
-	//		i--;
-	//		continue;
-	//	}
-	//	photonBuffer[i].pos = make_float3(randx, randy, randz);
-	//	photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
-	//}
-	cout<<endl;
-	float total = 0;
-	for (int i = 0;i<PHOTON_SQR;i++)
-	{
-		double tha = - 90.0 + i * 120.0 / PHOTON_SQR;tha = tha / 180 * PI;
-		total += cos(tha);
-		cout<<tha<<"\t"<<i<<endl;
-	}
-	cout<<total<<endl;
-	int curindex = 0;
-	//for(int i = 0;i<PHOTON_SQR;i++)
-	//{
-	//	double tha = - 90.0 + i * 120.0 / PHOTON_SQR;tha = tha / 180 * PI;
+	//		float randx = 1; 
+	//		float randy = 1;
+	//		float randz = 1;
+	//		//while(1)
+	//		while((randx * randx + randy * randy + randz*randz) > 1)
+	//		{
+	//			randx = (rand() % 10000 - 5000) / 5000.0;
+	//			randy = (rand() % 10000 - 5000) / 5000.0;
+	//			randz = (rand() % 10000 - 5000) / 5000.0;
+	//		}
+	//		float leng = sqrt(randx * randx + randy * randy + randz*randz);
+	//		randx = randx / leng; randy = randy / leng; randz = randz / leng;
+	//		if(randz > -0.2)
+	//		{
+	//			i--;
+	//			continue;
+	//		}
 	//
-	//	for(int j = 0;j < (PHOTON_NUM * cos(tha) / total + 10) ;j++)
+	//		//randy*=0.5;
+	//
+	//		//cout<<randx<<" "<<randy<<" "<<randz<<endl;
+	//		//randx = (PHOTON_SQR/2.0 - i/PHOTON_SQR) / (PHOTON_SQR/2);
+	//		//randy = (PHOTON_SQR/2.0 - i%PHOTON_SQR) / (PHOTON_SQR/2);
+	//		photonBuffer[i].pos = make_float3(randx, randy, randz);
+	//		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
+	//	}
+	//}
+	//else
+	//{
+	//	int globalp = PHOTON_NUM/4;
+	//	for(int i = 0; i<globalp;i++)
 	//	{
-	//		double the = 180.0 - j * 360.0 / (PHOTON_NUM * cos(tha) / total + 10);
-	//		the = the / 180 * PI;
+	//		float k = 1-(2.0*i-1)/(globalp);
+	//		float tha = asin(k);
+	//		float the = tha * sqrt(globalp * PI);
+	//
 	//		float randx = cos(the) * cos(tha);
 	//		float randy = sin(the) * cos(tha);
 	//		float randz = sin(tha);
 	//
-	//		photonBuffer[curindex].pos = make_float3(randx, randy, randz);
-	//		cout<<the<<"\t"<<tha<<"\t"<<randx<<"\t"<<randy<<"\t"<<randz<<"\t"<<curindex<<endl;
-	//		photonBuffer[curindex++].power = make_uchar4(255, 255, 255, 255);
-	//		if(curindex >= PHOTON_NUM)
-	//			break;
+	//		photonBuffer[i].pos = make_float3(randx, randy, randz);
+	//		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
 	//	}
-	//	if(curindex >= PHOTON_NUM)
-	//		break;
+	//	int directionp =  PHOTON_NUM/4 * 3;
+	//	for(int i = 0;i<directionp;i++)
+	//	{
+	//
+	//		float k = 1-(2.0*i-1)/(directionp*6);
+	//		float tha = asin(k);
+	//		float the = tha * sqrt((directionp*6) * PI);
+	//
+	//		float randx = cos(the) * cos(tha);
+	//		float randy = sin(the) * cos(tha);
+	//		float randz = -sin(tha);
+	//		//randz = randz > 0?-randz:randz;
+	//
+	//		photonBuffer[i + globalp].pos = make_float3(randx, randy, randz);
+	//		photonBuffer[i + globalp].power = make_uchar4(255, 255, 255, 255);
+	//	}
 	//}
 
-	int globalp = PHOTON_NUM/2;
-	for(int i = 0; i<globalp;i++)
-	{
-		float k = 1-(2.0*i-1)/(globalp);
-		float tha = asin(k);
-		float the = tha * sqrt(globalp * PI);
-
-		float randx = cos(the) * cos(tha);
-		float randy = sin(the) * cos(tha);
-		float randz = sin(tha);
-
-		photonBuffer[i].pos = make_float3(randx, randy, randz);
-		photonBuffer[i].power = make_uchar4(255, 255, 255, 255);
-	}
-	int directionp =  PHOTON_NUM/2 ;
-	for(int i = 0;i<directionp;i++)
-	{
-
-		float k = 1-(2.0*i-1)/(directionp*3);
-		float tha = asin(k);
-		float the = tha * sqrt((directionp*3) * PI);
-
-		float randx = cos(the) * cos(tha);
-		float randy = sin(the) * cos(tha);
-		float randz = -sin(tha);
-		//randz = randz > 0?-randz:randz;
-
-		photonBuffer[i + globalp].pos = make_float3(randx, randy, randz);
-		photonBuffer[i + globalp].power = make_uchar4(255, 255, 255, 255);
-	}
 
 	cudaMemcpy(objects_CUDA, objects, size * sizeof(Object), cudaMemcpyHostToDevice);
 
-	cudaMemcpy(photonBuffer_CUDA, photonBuffer, PHOTON_NUM * sizeof(Photon), cudaMemcpyHostToDevice);
+	//cudaMemcpy(photonBuffer_CUDA, photonBuffer, PHOTON_NUM * sizeof(Photon), cudaMemcpyHostToDevice);
 
 	/* KDTree For Triangles */
 	vector<KDTriangle*>tris;
