@@ -9,19 +9,19 @@
 #define UNIT_X 64
 #define UNIT_Y 64
 
-static int SCR_WIDTH = 512;
-static int SCR_HEIGHT = 512;
+static int SCR_WIDTH = 800;
+static int SCR_HEIGHT = 800;
 //static float3 CAM_POS = make_float3(10,100,50);
 //static float3 CAM_LOOKAT = make_float3(0,-1,0);
 //static float3 CAM_LOOKUP = make_float3(0,0,1);
 //static float3 CAM_LOOKRIGHT = make_float3(1,0,0);
-static float3 CAM_POS = make_float3(50, 140, 50);
+static float3 CAM_POS = make_float3(50, 140, 40);
 static float3 CAM_LOOKAT = make_float3(0, -1, 0);
 static float3 CAM_LOOKUP = make_float3(0, 0, 1);
 static float3 CAM_LOOKRIGHT = make_float3(1, 0, 0);
 static float CAM_FOV = 90;
 
-static float3 LIGHT_POS = make_float3(50,50,50);
+static float3 LIGHT_POS = make_float3(50,50,80);
 
 typedef struct {
 	float3 pos,lookat,up,right;
